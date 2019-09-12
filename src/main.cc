@@ -1,17 +1,19 @@
 #define _BSD_SOURCE
 
-#include <getopt.h>
+#include <clipp.h>
 #include <fstream>
+#include <sstream>
 #include "ooo_cpu.h"
 #include "uncore.h"
+#include "utils.h"
+
+using namespace clipp;
 
 uint8_t warmup_complete[NUM_CPUS], simulation_complete[NUM_CPUS],
     all_warmup_complete = 0, all_simulation_complete = 0,
-    MAX_INSTR_DESTINATIONS = NUM_INSTR_DESTINATIONS, knob_cloudsuite = 0,
-    knob_low_bandwidth = 0;
+    MAX_INSTR_DESTINATIONS = NUM_INSTR_DESTINATIONS;
 
-uint64_t warmup_instructions = 1000000, simulation_instructions = 10000000,
-         champsim_seed;
+uint64_t champsim_seed;
 
 time_t start_time;
 
@@ -152,15 +154,17 @@ print_dram_stats() {
   }
 
   uint64_t total_congested_cycle = 0;
-  for (uint32_t i = 0; i < DRAM_CHANNELS; i++)
+  for (uint32_t i = 0; i < DRAM_CHANNELS; i++) {
     total_congested_cycle += uncore.DRAM.dbus_cycle_congested[i];
-  if (uncore.DRAM.dbus_congested[NUM_TYPES][NUM_TYPES])
+  }
+  if (uncore.DRAM.dbus_congested[NUM_TYPES][NUM_TYPES]) {
     cout << " AVG_CONGESTED_CYCLE: "
          << (total_congested_cycle /
              uncore.DRAM.dbus_congested[NUM_TYPES][NUM_TYPES])
          << endl;
-  else
+  } else {
     cout << " AVG_CONGESTED_CYCLE: -" << endl;
+  }
 }
 
 void
@@ -342,8 +346,9 @@ RANDOM champsim_rand(champsim_seed);
 uint64_t
 va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
 #ifdef SANITY_CHECK
-  if (va == 0)
+  if (va == 0) {
     assert(0);
+  }
 #endif
 
   uint8_t swap = 0;
@@ -366,8 +371,9 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
                                           // before
     unique_cl[cpu].insert(make_pair(unique_va >> LOG2_BLOCK_SIZE, 0));
     num_cl[cpu]++;
-  } else
+  } else {
     cl_check->second++;
+  }
 
   pr = page_table.find(vpage);
   if (pr == page_table.end()) { // no VA => PA translation found
@@ -388,11 +394,13 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
         }
       }
 #ifdef SANITY_CHECK
-      if (found_NRU == 0)
+      if (found_NRU == 0) {
         assert(0);
+      }
 
-      if (pr == page_table.end())
+      if (pr == page_table.end()) {
         assert(0);
+      }
 #endif
       DP(if (warmup_complete[cpu]) {
         cout << "[SWAP] update page table NRU_vpage: " << hex << pr->first
@@ -410,8 +418,9 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
       // update inverse table with new PA => VA mapping
       ppage_check = inverse_table.find(mapped_ppage);
 #ifdef SANITY_CHECK
-      if (ppage_check == inverse_table.end())
+      if (ppage_check == inverse_table.end()) {
         assert(0);
+      }
 #endif
       ppage_check->second = vpage;
 
@@ -442,9 +451,9 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
       swap = 1;
     } else {
       uint8_t fragmented = 0;
-      if (num_adjacent_page > 0)
+      if (num_adjacent_page > 0) {
         random_ppage = ++previous_ppage;
-      else {
+      } else {
         random_ppage = champsim_rand.draw_rand();
         fragmented = 1;
       }
@@ -467,8 +476,9 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
                  << endl;
           });
 
-          if (num_adjacent_page > 0)
+          if (num_adjacent_page > 0) {
             fragmented = 1;
+          }
 
           // try one more time
           random_ppage = champsim_rand.draw_rand();
@@ -476,8 +486,9 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
           // encoding cpu number
           // random_ppage &= (~((NUM_CPUS-1)<<(32-LOG2_PAGE_SIZE)));
           // random_ppage |= (cpu<<(32-LOG2_PAGE_SIZE));
-        } else
+        } else {
           break;
+        }
       }
 
       // insert translation to page tables
@@ -501,18 +512,20 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
       }
     }
 
-    if (swap)
+    if (swap) {
       major_fault[cpu]++;
-    else
+    } else {
       minor_fault[cpu]++;
+    }
   } else {
     // printf("Found  vpage: %lx  random_ppage: %lx\n", vpage, pr->second);
   }
 
   pr = page_table.find(vpage);
 #ifdef SANITY_CHECK
-  if (pr == page_table.end())
+  if (pr == page_table.end()) {
     assert(0);
+  }
 #endif
   uint64_t ppage = pr->second;
 
@@ -525,10 +538,11 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
          << " paddress: " << pa << dec << endl;
   });
 
-  if (swap)
+  if (swap) {
     stall_cycle[cpu] = current_core_cycle[cpu] + SWAP_LATENCY;
-  else
+  } else {
     stall_cycle[cpu] = current_core_cycle[cpu] + PAGE_TABLE_LATENCY;
+  }
 
   // cout << "cpu: " << cpu << " allocated unique_vpage: " << hex <<
   // unique_vpage << " to ppage: " << ppage << dec << endl;
@@ -545,78 +559,55 @@ main(int argc, char** argv) {
   sigIntHandler.sa_flags = 0;
   sigaction(SIGINT, &sigIntHandler, NULL);
 
+  std::vector<std::string> traces;
+
+  auto cli =
+      (required("-t", "--trace").doc("Specify trace files") &
+           values("trace", traces),
+       option("-w", "--warmup-instructions")
+               .doc("Number of warmup instructions") &
+           value("#", phasesim::Options::warmup_instructions),
+       option("-s", "--simulation-instructions")
+               .doc("Number of simulation instructions") &
+           value("#", phasesim::Options::simulation_instructions),
+       option("--heartbeat-period") &
+           value("#", phasesim::Options::heartbeat_period),
+       option("--hide-heartbeat")
+           .set(phasesim::Options::hide_heartbeat)
+           .doc("Hide heartbeat messages"),
+       option("--knob-cloudsuite")
+           .set(phasesim::Options::knob_cloudsuite)
+           .doc("Use cloudsuite trace"),
+       option("--knob-low-bandwidth")
+           .set(phasesim::Options::knob_low_bandwidth)
+           .doc("Use low bandwidth"));
+
   cout << endl
        << "*** ChampSim Multicore Out-of-Order Simulator ***" << endl
        << endl;
 
-  // initialize knobs
-  uint8_t show_heartbeat = 1;
-
-  uint32_t seed_number = 0;
-
-  // check to see if knobs changed using getopt_long()
-  int c;
-  while (1) {
-    static struct option long_options[] = {
-        {"warmup_instructions", required_argument, 0, 'w'},
-        {"simulation_instructions", required_argument, 0, 'i'},
-        {"hide_heartbeat", no_argument, 0, 'h'},
-        {"cloudsuite", no_argument, 0, 'c'},
-        {"low_bandwidth", no_argument, 0, 'b'},
-        {"traces", no_argument, 0, 't'},
-        {0, 0, 0, 0}};
-
-    int option_index = 0;
-
-    c = getopt_long_only(argc, argv, "wihsb", long_options, &option_index);
-
-    // no more option characters
-    if (c == -1)
-      break;
-
-    int traces_encountered = 0;
-
-    switch (c) {
-    case 'w':
-      warmup_instructions = atol(optarg);
-      break;
-    case 'i':
-      simulation_instructions = atol(optarg);
-      break;
-    case 'h':
-      show_heartbeat = 0;
-      break;
-    case 'c':
-      knob_cloudsuite = 1;
-      MAX_INSTR_DESTINATIONS = NUM_INSTR_DESTINATIONS_SPARC;
-      break;
-    case 'b':
-      knob_low_bandwidth = 1;
-      break;
-    case 't':
-      traces_encountered = 1;
-      break;
-    default:
-      abort();
-    }
-
-    if (traces_encountered == 1)
-      break;
+  if (!parse(argc, argv, cli)) {
+    cout << make_man_page(cli, argv[0]);
+    exit(1);
   }
 
+  // initialize knobs
+  uint32_t seed_number = 0;
+
   // consequences of knobs
-  cout << "Warmup Instructions: " << warmup_instructions << endl;
-  cout << "Simulation Instructions: " << simulation_instructions << endl;
-  // cout << "Scramble Loads: " << (knob_scramble_loads ? "ture" : "false") <<
-  // endl;
+  cout << "Warmup Instructions: " << phasesim::Options::warmup_instructions
+       << endl;
+  cout << "Simulation Instructions: "
+       << phasesim::Options::simulation_instructions << endl;
   cout << "Number of CPUs: " << NUM_CPUS << endl;
   cout << "LLC sets: " << LLC_SET << endl;
   cout << "LLC ways: " << LLC_WAY << endl;
 
-  if (knob_low_bandwidth)
+  if (phasesim::Options::knob_low_bandwidth) {
     DRAM_MTPS = DRAM_IO_FREQ / 4;
-  else
+  } else {
     DRAM_MTPS = DRAM_IO_FREQ;
+  }
 
   // DRAM access latency
   tRP = (uint32_t)((1.0 * tRP_DRAM_NANOSECONDS * CPU_FREQ) / 1000);
@@ -639,73 +630,53 @@ main(int argc, char** argv) {
   // end consequence of knobs
 
   // search through the argv for "-traces"
-  int found_traces = 0;
-  int count_traces = 0;
   cout << endl;
-  for (int i = 0; i < argc; i++) {
-    if (found_traces) {
-      printf("CPU %d runs %s\n", count_traces, argv[i]);
 
-      sprintf(ooo_cpu[count_traces].trace_string, "%s", argv[i]);
+  int cpu = 0;
+  for (cpu = 0; cpu < traces.size(); cpu++) {
+    sprintf(ooo_cpu[cpu].trace_string, "%s", traces[cpu].c_str());
 
-      char *full_name = ooo_cpu[count_traces].trace_string,
-           *last_dot = strrchr(ooo_cpu[count_traces].trace_string, '.');
+    printf("CPU %d runs %s\n", cpu, ooo_cpu[cpu].trace_string);
 
-      ifstream test_file(full_name);
-      if (!test_file.good()) {
-        printf("TRACE FILE DOES NOT EXIST\n");
-        assert(false);
-      }
+    char *full_name = ooo_cpu[cpu].trace_string,
+         *last_dot = strrchr(ooo_cpu[cpu].trace_string, '.');
 
-      if (full_name[last_dot - full_name + 1] == 'g') // gzip format
-        sprintf(ooo_cpu[count_traces].gunzip_command, "gunzip -c %s", argv[i]);
-      else if (full_name[last_dot - full_name + 1] == 'x') // xz
-        sprintf(ooo_cpu[count_traces].gunzip_command, "xz -dc %s", argv[i]);
-      else {
-        cout
-            << "ChampSim does not support traces other than gz or xz compression!"
-            << endl;
-        assert(0);
-      }
+    ifstream test_file(full_name);
+    if (!test_file.good()) {
+      cout << full_name << endl;
+      printf("TRACE FILE DOES NOT EXIST\n");
+      assert(false);
+    }
 
-      char* pch[100];
-      int count_str = 0;
-      pch[0] = strtok(argv[i], " /,.-");
-      while (pch[count_str] != NULL) {
-        // printf ("%s %d\n", pch[count_str], count_str);
-        count_str++;
-        pch[count_str] = strtok(NULL, " /,.-");
-      }
+    if (full_name[last_dot - full_name + 1] == 'g') { // gzip format
+      sprintf(
+          ooo_cpu[cpu].gunzip_command,
+          "gunzip -c %s",
+          ooo_cpu[cpu].trace_string);
+    } else if (full_name[last_dot - full_name + 1] == 'x') { // xz
+      sprintf(
+          ooo_cpu[cpu].gunzip_command, "xz -dc %s", ooo_cpu[cpu].trace_string);
+    } else {
+      cout
+          << "ChampSim does not support traces other than gz or xz compression!"
+          << endl;
+      assert(0);
+    }
 
-      // printf("max count_str: %d\n", count_str);
-      // printf("application: %s\n", pch[count_str-3]);
+    ooo_cpu[cpu].trace_file = popen(ooo_cpu[cpu].gunzip_command, "r");
+    if (ooo_cpu[cpu].trace_file == NULL) {
+      printf("\n*** Trace file not found: %s ***\n\n", traces[cpu]);
+      assert(0);
+    }
 
-      int j = 0;
-      while (pch[count_str - 3][j] != '\0') {
-        seed_number += pch[count_str - 3][j];
-        // printf("%c %d %d\n", pch[count_str-3][j], j, seed_number);
-        j++;
-      }
-
-      ooo_cpu[count_traces].trace_file =
-          popen(ooo_cpu[count_traces].gunzip_command, "r");
-      if (ooo_cpu[count_traces].trace_file == NULL) {
-        printf("\n*** Trace file not found: %s ***\n\n", argv[i]);
-        assert(0);
-      }
-
-      count_traces++;
-      if (count_traces > NUM_CPUS) {
-        printf(
-            "\n*** Too many traces for the configured number of cores ***\n\n");
-        assert(0);
-      }
-    } else if (strcmp(argv[i], "-traces") == 0) {
-      found_traces = 1;
+    if (cpu > NUM_CPUS) {
+      printf(
+          "\n*** Too many traces for the configured number of cores ***\n\n");
+      assert(0);
     }
   }
 
-  if (count_traces != NUM_CPUS) {
+  if (cpu != NUM_CPUS) {
     printf(
         "\n*** Not enough traces for the configured number of cores ***\n\n");
     assert(0);
@@ -717,10 +688,11 @@ main(int argc, char** argv) {
   champsim_seed = seed_number;
   for (int i = 0; i < NUM_CPUS; i++) {
     ooo_cpu[i].cpu = i;
-    ooo_cpu[i].warmup_instructions = warmup_instructions;
-    ooo_cpu[i].simulation_instructions = simulation_instructions;
+    ooo_cpu[i].warmup_instructions = phasesim::Options::warmup_instructions;
+    ooo_cpu[i].simulation_instructions =
+        phasesim::Options::simulation_instructions;
     ooo_cpu[i].begin_sim_cycle = 0;
-    ooo_cpu[i].begin_sim_instr = warmup_instructions;
+    ooo_cpu[i].begin_sim_instr = phasesim::Options::warmup_instructions;
 
     // ROB
     ooo_cpu[i].ROB.cpu = i;
@@ -822,16 +794,17 @@ main(int argc, char** argv) {
       current_core_cycle[i]++;
 
       // cout << "Trying to process instr_id: " << ooo_cpu[i].instr_unique_id <<
-      // " fetch_stall: " << +ooo_cpu[i].fetch_stall; cout << " stall_cycle: " <<
-      // stall_cycle[i] << " current: " << current_core_cycle[i] << endl;
+      // " fetch_stall: " << +ooo_cpu[i].fetch_stall; cout << " stall_cycle: "
+      // << stall_cycle[i] << " current: " << current_core_cycle[i] << endl;
 
       // core might be stalled due to page fault or branch misprediction
       if (stall_cycle[i] <= current_core_cycle[i]) {
         // fetch unit
         if (ooo_cpu[i].ROB.occupancy < ooo_cpu[i].ROB.SIZE) {
           // handle branch
-          if (ooo_cpu[i].fetch_stall == 0)
+          if (ooo_cpu[i].fetch_stall == 0) {
             ooo_cpu[i].handle_branch();
+          }
         }
 
         // fetch
@@ -841,8 +814,9 @@ main(int argc, char** argv) {
         uint32_t schedule_index = ooo_cpu[i].ROB.next_schedule;
         if ((ooo_cpu[i].ROB.entry[schedule_index].scheduled == 0) &&
             (ooo_cpu[i].ROB.entry[schedule_index].event_cycle <=
-             current_core_cycle[i]))
+             current_core_cycle[i])) {
           ooo_cpu[i].schedule_instruction();
+        }
 
         // execute
         ooo_cpu[i].execute_instruction();
@@ -857,21 +831,23 @@ main(int argc, char** argv) {
         // retire
         if ((ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) &&
             (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <=
-             current_core_cycle[i]))
+             current_core_cycle[i])) {
           ooo_cpu[i].retire_rob();
+        }
       }
 
       // heartbeat information
-      if (show_heartbeat &&
+      if (!phasesim::Options::hide_heartbeat &&
           (ooo_cpu[i].num_retired >= ooo_cpu[i].next_print_instruction)) {
         float cumulative_ipc;
-        if (warmup_complete[i])
+        if (warmup_complete[i]) {
           cumulative_ipc =
               (1.0 * (ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr)) /
               (current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle);
-        else
+        } else {
           cumulative_ipc =
               (1.0 * ooo_cpu[i].num_retired) / current_core_cycle[i];
+        }
         float heartbeat_ipc =
             (1.0 * ooo_cpu[i].num_retired - ooo_cpu[i].last_sim_instr) /
             (current_core_cycle[i] - ooo_cpu[i].last_sim_cycle);
@@ -883,7 +859,7 @@ main(int argc, char** argv) {
              << " cumulative IPC: " << cumulative_ipc;
         cout << " (Simulation time: " << elapsed_hour << " hr "
              << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
-        ooo_cpu[i].next_print_instruction += STAT_PRINTING_PERIOD;
+        ooo_cpu[i].next_print_instruction += phasesim::Options::heartbeat_period;
 
         ooo_cpu[i].last_sim_instr = ooo_cpu[i].num_retired;
         ooo_cpu[i].last_sim_cycle = current_core_cycle[i];
@@ -892,13 +868,14 @@ main(int argc, char** argv) {
       // check for deadlock
       if (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].ip &&
           (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle +
-           DEADLOCK_CYCLE) <= current_core_cycle[i])
+           DEADLOCK_CYCLE) <= current_core_cycle[i]) {
         print_deadlock(i);
+      }
 
       // check for warmup
       // warmup complete
       if ((warmup_complete[i] == 0) &&
-          (ooo_cpu[i].num_retired > warmup_instructions)) {
+          (ooo_cpu[i].num_retired > phasesim::Options::warmup_instructions)) {
         warmup_complete[i] = 1;
         all_warmup_complete++;
       }
@@ -944,8 +921,9 @@ main(int argc, char** argv) {
         all_simulation_complete++;
       }
 
-      if (all_simulation_complete == NUM_CPUS)
+      if (all_simulation_complete == NUM_CPUS) {
         run_simulation = 0;
+      }
     }
 
     // TODO: should it be backward?

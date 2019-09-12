@@ -2,12 +2,8 @@
 #define OOO_CPU_H
 
 #include "cache.h"
+#include "utils.h"
 
-#ifdef CRC2_COMPILE
-#define STAT_PRINTING_PERIOD 1000000
-#else
-#define STAT_PRINTING_PERIOD 10000000
-#endif
 #define DEADLOCK_CYCLE 1000000
 
 using namespace std;
@@ -151,7 +147,7 @@ class O3_CPU {
     instrs_to_read_this_cycle = 0;
     instrs_to_fetch_this_cycle = 0;
 
-    next_print_instruction = STAT_PRINTING_PERIOD;
+    next_print_instruction = phasesim::Options::heartbeat_period;
     num_retired = 0;
 
     inflight_reg_executions = 0;
