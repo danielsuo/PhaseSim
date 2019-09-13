@@ -45,3 +45,8 @@ add_executable (
   ${MAIN_SOURCE}
   ${POLICY_SOURCE}
   )
+
+add_dependencies (
+  ${PROJECT_NAME}
+  ${CLIPP_EXTERNAL_PROJECT}
+  )
