@@ -1,0 +1,43 @@
+name: phasesim
+channels:
+  - defaults
+  - conda-forge
+  - anaconda
+  - quantstack
+  - nlesc
+dependencies:
+  - numpy
+  - scipy
+  - cython
+  - scikit-learn
+  - mlpack
+  - ipython
+  - jupyter
+  - flake8
+  - click
+  - tqdm
+  - pandas
+  - seaborn
+  - matplotlib
+  - ipywidgets
+  - jupyterlab
+  - cmake
+  - cloudpickle
+  - isl=0.17.1
+  - glibc
+  - curl
+  - wget
+  - libstdcxx-ng
+  - readline
+  - ncurses
+  - git
+  - pip
+  - zlib
+  - elfutils
+  - valgrind
+  - pip:
+    - ipynb
+    - sacred
+    - clickutil
+    - compiledb
+    - pixiedust

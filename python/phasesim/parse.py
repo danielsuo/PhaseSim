@@ -1,3 +1,4 @@
+import os
 import re
 import struct
 import numpy as np
@@ -5,6 +6,9 @@ import pandas as pd
 import seaborn as sns
 import subprocess
 import tqdm
+import subprocess
+
+from .constants import PHASESIM_HOME
 
 headline = ("CPU \d "
             "cumulative IPC: (\d+\.\d+) "
@@ -215,3 +219,16 @@ def parse_telemetry(path,
     return df
 
 
+def parse_phases(path, output_df=False):
+    find = subprocess.Popen(["find", PHASESIM_HOME, "-type", "f"], stdout=subprocess.PIPE)
+    grep = subprocess.check_output(["grep", "PhaseDetector"], stdin=find.stdout)
+
+    phase_detectors = [os.path.basename(detector) for detector in grep.decode("ascii").split()]
+    phase_detectors = [detector.replace(".h", "") for detector in phase_detectors if detector != "PhaseDetector.h"]
+
+    dfs = {}
+    for detector in phase_detectors:
+        print("Parsing {}".format(detector))
+        dfs[detector] = parse_telemetry(path, detector).iloc[:,0]
+
+    return pd.DataFrame.from_records(dfs) if output_df else dfs
