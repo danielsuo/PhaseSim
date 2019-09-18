@@ -1,6 +1,7 @@
 #ifndef OOO_CPU_H
 #define OOO_CPU_H
 
+#include "PhaseManager.h"
 #include "cache.h"
 #include "utils.h"
 
@@ -28,6 +29,10 @@ extern uint32_t SCHEDULING_LATENCY, EXEC_LATENCY;
 class O3_CPU {
  public:
   uint32_t cpu;
+
+  // PhaseSim
+  PhaseManager phaseManager;
+  phasesim::CPUCounters cpu_counters;
 
   // trace
   FILE* trace_file;
@@ -127,7 +132,7 @@ class O3_CPU {
           L2C_MSHR_SIZE};
 
   // constructor
-  O3_CPU() {
+  O3_CPU(uint64_t intervalLength) : phaseManager(intervalLength) {
     cpu = 0;
 
     // trace
@@ -238,7 +243,5 @@ class O3_CPU {
   void initialize_branch_predictor(),
       last_branch_result(uint64_t ip, uint8_t taken);
 };
-
-extern O3_CPU ooo_cpu[NUM_CPUS];
 
 #endif

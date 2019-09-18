@@ -9,6 +9,8 @@
 
 using namespace clipp;
 
+O3_CPU* ooo_cpu[NUM_CPUS];
+
 uint8_t warmup_complete[NUM_CPUS], simulation_complete[NUM_CPUS],
     all_warmup_complete = 0, all_simulation_complete = 0,
     MAX_INSTR_DESTINATIONS = NUM_INSTR_DESTINATIONS;
@@ -121,14 +123,14 @@ print_branch_stats() {
   for (uint32_t i = 0; i < NUM_CPUS; i++) {
     cout << endl << "CPU " << i << " Branch Prediction Accuracy: ";
     cout << (100.0 *
-             (ooo_cpu[i].num_branch - ooo_cpu[i].branch_mispredictions)) /
-            ooo_cpu[i].num_branch;
+             (ooo_cpu[i]->num_branch - ooo_cpu[i]->branch_mispredictions)) /
+            ooo_cpu[i]->num_branch;
     cout << "% MPKI: "
-         << (1000.0 * ooo_cpu[i].branch_mispredictions) /
-            (ooo_cpu[i].num_retired - ooo_cpu[i].warmup_instructions);
+         << (1000.0 * ooo_cpu[i]->branch_mispredictions) /
+            (ooo_cpu[i]->num_retired - ooo_cpu[i]->warmup_instructions);
     cout << " Average ROB Occupancy at Mispredict: "
-         << (1.0 * ooo_cpu[i].total_rob_occupancy_at_branch_mispredict) /
-            ooo_cpu[i].branch_mispredictions
+         << (1.0 * ooo_cpu[i]->total_rob_occupancy_at_branch_mispredict) /
+            ooo_cpu[i]->branch_mispredictions
          << endl;
   }
 }
@@ -211,22 +213,22 @@ finish_warmup() {
   cout << endl;
   for (uint32_t i = 0; i < NUM_CPUS; i++) {
     cout << "Warmup complete CPU " << i
-         << " instructions: " << ooo_cpu[i].num_retired
+         << " instructions: " << ooo_cpu[i]->num_retired
          << " cycles: " << current_core_cycle[i];
     cout << " (Simulation time: " << elapsed_hour << " hr " << elapsed_minute
          << " min " << elapsed_second << " sec) " << endl;
 
-    ooo_cpu[i].begin_sim_cycle = current_core_cycle[i];
-    ooo_cpu[i].begin_sim_instr = ooo_cpu[i].num_retired;
+    ooo_cpu[i]->begin_sim_cycle = current_core_cycle[i];
+    ooo_cpu[i]->begin_sim_instr = ooo_cpu[i]->num_retired;
 
     // reset branch stats
-    ooo_cpu[i].num_branch = 0;
-    ooo_cpu[i].branch_mispredictions = 0;
-    ooo_cpu[i].total_rob_occupancy_at_branch_mispredict = 0;
+    ooo_cpu[i]->num_branch = 0;
+    ooo_cpu[i]->branch_mispredictions = 0;
+    ooo_cpu[i]->total_rob_occupancy_at_branch_mispredict = 0;
 
-    reset_cache_stats(i, &ooo_cpu[i].L1I);
-    reset_cache_stats(i, &ooo_cpu[i].L1D);
-    reset_cache_stats(i, &ooo_cpu[i].L2C);
+    reset_cache_stats(i, &ooo_cpu[i]->L1I);
+    reset_cache_stats(i, &ooo_cpu[i]->L1D);
+    reset_cache_stats(i, &ooo_cpu[i]->L2C);
     reset_cache_stats(i, &uncore.LLC);
   }
   cout << endl;
@@ -241,12 +243,12 @@ finish_warmup() {
 
   // set actual cache latency
   for (uint32_t i = 0; i < NUM_CPUS; i++) {
-    ooo_cpu[i].ITLB.LATENCY = ITLB_LATENCY;
-    ooo_cpu[i].DTLB.LATENCY = DTLB_LATENCY;
-    ooo_cpu[i].STLB.LATENCY = STLB_LATENCY;
-    ooo_cpu[i].L1I.LATENCY = L1I_LATENCY;
-    ooo_cpu[i].L1D.LATENCY = L1D_LATENCY;
-    ooo_cpu[i].L2C.LATENCY = L2C_LATENCY;
+    ooo_cpu[i]->ITLB.LATENCY = ITLB_LATENCY;
+    ooo_cpu[i]->DTLB.LATENCY = DTLB_LATENCY;
+    ooo_cpu[i]->STLB.LATENCY = STLB_LATENCY;
+    ooo_cpu[i]->L1I.LATENCY = L1I_LATENCY;
+    ooo_cpu[i]->L1D.LATENCY = L1D_LATENCY;
+    ooo_cpu[i]->L2C.LATENCY = L2C_LATENCY;
   }
   uncore.LLC.LATENCY = LLC_LATENCY;
 }
@@ -254,41 +256,42 @@ finish_warmup() {
 void
 print_deadlock(uint32_t i) {
   cout << "DEADLOCK! CPU " << i
-       << " instr_id: " << ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].instr_id;
+       << " instr_id: " << ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].instr_id;
   cout << " translated: "
-       << +ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].translated;
-  cout << " fetched: " << +ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].fetched;
+       << +ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].translated;
+  cout << " fetched: " << +ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].fetched;
   cout << " scheduled: "
-       << +ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].scheduled;
-  cout << " executed: " << +ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed;
+       << +ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].scheduled;
+  cout << " executed: "
+       << +ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].executed;
   cout << " is_memory: "
-       << +ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].is_memory;
-  cout << " event: " << ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle;
+       << +ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].is_memory;
+  cout << " event: " << ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].event_cycle;
   cout << " current: " << current_core_cycle[i] << endl;
 
   // print LQ entry
   cout << endl << "Load Queue Entry" << endl;
   for (uint32_t j = 0; j < LQ_SIZE; j++) {
     cout << "[LQ] entry: " << j
-         << " instr_id: " << ooo_cpu[i].LQ.entry[j].instr_id
-         << " address: " << hex << ooo_cpu[i].LQ.entry[j].physical_address
-         << dec << " translated: " << +ooo_cpu[i].LQ.entry[j].translated
-         << " fetched: " << +ooo_cpu[i].LQ.entry[i].fetched << endl;
+         << " instr_id: " << ooo_cpu[i]->LQ.entry[j].instr_id
+         << " address: " << hex << ooo_cpu[i]->LQ.entry[j].physical_address
+         << dec << " translated: " << +ooo_cpu[i]->LQ.entry[j].translated
+         << " fetched: " << +ooo_cpu[i]->LQ.entry[i].fetched << endl;
   }
 
   // print SQ entry
   cout << endl << "Store Queue Entry" << endl;
   for (uint32_t j = 0; j < SQ_SIZE; j++) {
     cout << "[SQ] entry: " << j
-         << " instr_id: " << ooo_cpu[i].SQ.entry[j].instr_id
-         << " address: " << hex << ooo_cpu[i].SQ.entry[j].physical_address
-         << dec << " translated: " << +ooo_cpu[i].SQ.entry[j].translated
-         << " fetched: " << +ooo_cpu[i].SQ.entry[i].fetched << endl;
+         << " instr_id: " << ooo_cpu[i]->SQ.entry[j].instr_id
+         << " address: " << hex << ooo_cpu[i]->SQ.entry[j].physical_address
+         << dec << " translated: " << +ooo_cpu[i]->SQ.entry[j].translated
+         << " fetched: " << +ooo_cpu[i]->SQ.entry[i].fetched << endl;
   }
 
   // print L1D MSHR entry
   PACKET_QUEUE* queue;
-  queue = &ooo_cpu[i].L1D.MSHR;
+  queue = &ooo_cpu[i]->L1D.MSHR;
   cout << endl << queue->NAME << " Entry" << endl;
   for (uint32_t j = 0; j < queue->SIZE; j++) {
     cout << "[" << queue->NAME << "] entry: " << j
@@ -436,14 +439,14 @@ va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_vpage) {
       page_queue.push(vpage);
 
       // invalidate corresponding vpage and ppage from the cache hierarchy
-      ooo_cpu[cpu].ITLB.invalidate_entry(NRU_vpage);
-      ooo_cpu[cpu].DTLB.invalidate_entry(NRU_vpage);
-      ooo_cpu[cpu].STLB.invalidate_entry(NRU_vpage);
+      ooo_cpu[cpu]->ITLB.invalidate_entry(NRU_vpage);
+      ooo_cpu[cpu]->DTLB.invalidate_entry(NRU_vpage);
+      ooo_cpu[cpu]->STLB.invalidate_entry(NRU_vpage);
       for (uint32_t i = 0; i < BLOCK_SIZE; i++) {
         uint64_t cl_addr = (mapped_ppage << 6) | i;
-        ooo_cpu[cpu].L1I.invalidate_entry(cl_addr);
-        ooo_cpu[cpu].L1D.invalidate_entry(cl_addr);
-        ooo_cpu[cpu].L2C.invalidate_entry(cl_addr);
+        ooo_cpu[cpu]->L1I.invalidate_entry(cl_addr);
+        ooo_cpu[cpu]->L1D.invalidate_entry(cl_addr);
+        ooo_cpu[cpu]->L2C.invalidate_entry(cl_addr);
         uncore.LLC.invalidate_entry(cl_addr);
       }
 
@@ -572,6 +575,8 @@ main(int argc, char** argv) {
            value("#", phasesim::Options::simulation_instructions),
        option("--heartbeat-period") &
            value("#", phasesim::Options::heartbeat_period),
+       option("-l", "--phase-interval-length") &
+           value("#", phasesim::Options::phase_interval_length),
        option("--hide-heartbeat")
            .set(phasesim::Options::hide_heartbeat)
            .doc("Hide heartbeat messages"),
@@ -603,6 +608,10 @@ main(int argc, char** argv) {
   cout << "LLC sets: " << LLC_SET << endl;
   cout << "LLC ways: " << LLC_WAY << endl;
 
+  cout << "Heartbeat period: " << phasesim::Options::heartbeat_period << endl;
+  cout << "Phase interval length: " << phasesim::Options::phase_interval_length
+       << endl;
+
   if (phasesim::Options::knob_low_bandwidth) {
     DRAM_MTPS = DRAM_IO_FREQ / 4;
   } else {
@@ -632,14 +641,16 @@ main(int argc, char** argv) {
   // search through the argv for "-traces"
   cout << endl;
 
-  int cpu = 0;
-  for (cpu = 0; cpu < traces.size(); cpu++) {
-    sprintf(ooo_cpu[cpu].trace_string, "%s", traces[cpu].c_str());
+  int i = 0;
+  for (i = 0; i < traces.size(); i++) {
+    ooo_cpu[i] = new O3_CPU(phasesim::Options::phase_interval_length);
 
-    printf("CPU %d runs %s\n", cpu, ooo_cpu[cpu].trace_string);
+    sprintf(ooo_cpu[i]->trace_string, "%s", traces[i].c_str());
 
-    char *full_name = ooo_cpu[cpu].trace_string,
-         *last_dot = strrchr(ooo_cpu[cpu].trace_string, '.');
+    printf("CPU %d runs %s\n", i, ooo_cpu[i]->trace_string);
+
+    char *full_name = ooo_cpu[i]->trace_string,
+         *last_dot = strrchr(ooo_cpu[i]->trace_string, '.');
 
     ifstream test_file(full_name);
     if (!test_file.good()) {
@@ -650,12 +661,10 @@ main(int argc, char** argv) {
 
     if (full_name[last_dot - full_name + 1] == 'g') { // gzip format
       sprintf(
-          ooo_cpu[cpu].gunzip_command,
-          "gunzip -c %s",
-          ooo_cpu[cpu].trace_string);
+          ooo_cpu[i]->gunzip_command, "gunzip -c %s", ooo_cpu[i]->trace_string);
     } else if (full_name[last_dot - full_name + 1] == 'x') { // xz
       sprintf(
-          ooo_cpu[cpu].gunzip_command, "xz -dc %s", ooo_cpu[cpu].trace_string);
+          ooo_cpu[i]->gunzip_command, "xz -dc %s", ooo_cpu[i]->trace_string);
     } else {
       cout
           << "ChampSim does not support traces other than gz or xz compression!"
@@ -663,20 +672,20 @@ main(int argc, char** argv) {
       assert(0);
     }
 
-    ooo_cpu[cpu].trace_file = popen(ooo_cpu[cpu].gunzip_command, "r");
-    if (ooo_cpu[cpu].trace_file == NULL) {
-      printf("\n*** Trace file not found: %s ***\n\n", traces[cpu]);
+    ooo_cpu[i]->trace_file = popen(ooo_cpu[i]->gunzip_command, "r");
+    if (ooo_cpu[i]->trace_file == NULL) {
+      printf("\n*** Trace file not found: %s ***\n\n", traces[i]);
       assert(0);
     }
 
-    if (cpu > NUM_CPUS) {
+    if (i > NUM_CPUS) {
       printf(
           "\n*** Too many traces for the configured number of cores ***\n\n");
       assert(0);
     }
   }
 
-  if (cpu != NUM_CPUS) {
+  if (i != NUM_CPUS) {
     printf(
         "\n*** Not enough traces for the configured number of cores ***\n\n");
     assert(0);
@@ -687,69 +696,70 @@ main(int argc, char** argv) {
   srand(seed_number);
   champsim_seed = seed_number;
   for (int i = 0; i < NUM_CPUS; i++) {
-    ooo_cpu[i].cpu = i;
-    ooo_cpu[i].warmup_instructions = phasesim::Options::warmup_instructions;
-    ooo_cpu[i].simulation_instructions =
+    ooo_cpu[i]->cpu = i;
+    ooo_cpu[i]->warmup_instructions = phasesim::Options::warmup_instructions;
+    ooo_cpu[i]->simulation_instructions =
         phasesim::Options::simulation_instructions;
-    ooo_cpu[i].begin_sim_cycle = 0;
-    ooo_cpu[i].begin_sim_instr = phasesim::Options::warmup_instructions;
+    ooo_cpu[i]->begin_sim_cycle = 0;
+    ooo_cpu[i]->begin_sim_instr = phasesim::Options::warmup_instructions;
 
     // ROB
-    ooo_cpu[i].ROB.cpu = i;
+    ooo_cpu[i]->ROB.cpu = i;
 
     // BRANCH PREDICTOR
-    ooo_cpu[i].initialize_branch_predictor();
+    ooo_cpu[i]->initialize_branch_predictor();
 
     // TLBs
-    ooo_cpu[i].ITLB.cpu = i;
-    ooo_cpu[i].ITLB.cache_type = IS_ITLB;
-    ooo_cpu[i].ITLB.fill_level = FILL_L1;
-    ooo_cpu[i].ITLB.extra_interface = &ooo_cpu[i].L1I;
-    ooo_cpu[i].ITLB.lower_level = &ooo_cpu[i].STLB;
+    ooo_cpu[i]->ITLB.cpu = i;
+    ooo_cpu[i]->ITLB.cache_type = IS_ITLB;
+    ooo_cpu[i]->ITLB.fill_level = FILL_L1;
+    ooo_cpu[i]->ITLB.extra_interface = &ooo_cpu[i]->L1I;
+    ooo_cpu[i]->ITLB.lower_level = &ooo_cpu[i]->STLB;
 
-    ooo_cpu[i].DTLB.cpu = i;
-    ooo_cpu[i].DTLB.cache_type = IS_DTLB;
-    ooo_cpu[i].DTLB.MAX_READ =
+    ooo_cpu[i]->DTLB.cpu = i;
+    ooo_cpu[i]->DTLB.cache_type = IS_DTLB;
+    ooo_cpu[i]->DTLB.MAX_READ =
         (2 > MAX_READ_PER_CYCLE) ? MAX_READ_PER_CYCLE : 2;
-    ooo_cpu[i].DTLB.fill_level = FILL_L1;
-    ooo_cpu[i].DTLB.extra_interface = &ooo_cpu[i].L1D;
-    ooo_cpu[i].DTLB.lower_level = &ooo_cpu[i].STLB;
+    ooo_cpu[i]->DTLB.fill_level = FILL_L1;
+    ooo_cpu[i]->DTLB.extra_interface = &ooo_cpu[i]->L1D;
+    ooo_cpu[i]->DTLB.lower_level = &ooo_cpu[i]->STLB;
 
-    ooo_cpu[i].STLB.cpu = i;
-    ooo_cpu[i].STLB.cache_type = IS_STLB;
-    ooo_cpu[i].STLB.fill_level = FILL_L2;
-    ooo_cpu[i].STLB.upper_level_icache[i] = &ooo_cpu[i].ITLB;
-    ooo_cpu[i].STLB.upper_level_dcache[i] = &ooo_cpu[i].DTLB;
+    ooo_cpu[i]->STLB.cpu = i;
+    ooo_cpu[i]->STLB.cache_type = IS_STLB;
+    ooo_cpu[i]->STLB.fill_level = FILL_L2;
+    ooo_cpu[i]->STLB.upper_level_icache[i] = &ooo_cpu[i]->ITLB;
+    ooo_cpu[i]->STLB.upper_level_dcache[i] = &ooo_cpu[i]->DTLB;
 
     // PRIVATE CACHE
-    ooo_cpu[i].L1I.cpu = i;
-    ooo_cpu[i].L1I.cache_type = IS_L1I;
-    ooo_cpu[i].L1I.MAX_READ =
+    ooo_cpu[i]->L1I.cpu = i;
+    ooo_cpu[i]->L1I.cache_type = IS_L1I;
+    ooo_cpu[i]->L1I.MAX_READ =
         (FETCH_WIDTH > MAX_READ_PER_CYCLE) ? MAX_READ_PER_CYCLE : FETCH_WIDTH;
-    ooo_cpu[i].L1I.fill_level = FILL_L1;
-    ooo_cpu[i].L1I.lower_level = &ooo_cpu[i].L2C;
+    ooo_cpu[i]->L1I.fill_level = FILL_L1;
+    ooo_cpu[i]->L1I.lower_level = &ooo_cpu[i]->L2C;
 
-    ooo_cpu[i].L1D.cpu = i;
-    ooo_cpu[i].L1D.cache_type = IS_L1D;
-    ooo_cpu[i].L1D.MAX_READ = (2 > MAX_READ_PER_CYCLE) ? MAX_READ_PER_CYCLE : 2;
-    ooo_cpu[i].L1D.fill_level = FILL_L1;
-    ooo_cpu[i].L1D.lower_level = &ooo_cpu[i].L2C;
-    ooo_cpu[i].L1D.l1d_prefetcher_initialize();
+    ooo_cpu[i]->L1D.cpu = i;
+    ooo_cpu[i]->L1D.cache_type = IS_L1D;
+    ooo_cpu[i]->L1D.MAX_READ =
+        (2 > MAX_READ_PER_CYCLE) ? MAX_READ_PER_CYCLE : 2;
+    ooo_cpu[i]->L1D.fill_level = FILL_L1;
+    ooo_cpu[i]->L1D.lower_level = &ooo_cpu[i]->L2C;
+    ooo_cpu[i]->L1D.l1d_prefetcher_initialize();
 
-    ooo_cpu[i].L2C.cpu = i;
-    ooo_cpu[i].L2C.cache_type = IS_L2C;
-    ooo_cpu[i].L2C.fill_level = FILL_L2;
-    ooo_cpu[i].L2C.upper_level_icache[i] = &ooo_cpu[i].L1I;
-    ooo_cpu[i].L2C.upper_level_dcache[i] = &ooo_cpu[i].L1D;
-    ooo_cpu[i].L2C.lower_level = &uncore.LLC;
-    ooo_cpu[i].L2C.l2c_prefetcher_initialize();
+    ooo_cpu[i]->L2C.cpu = i;
+    ooo_cpu[i]->L2C.cache_type = IS_L2C;
+    ooo_cpu[i]->L2C.fill_level = FILL_L2;
+    ooo_cpu[i]->L2C.upper_level_icache[i] = &ooo_cpu[i]->L1I;
+    ooo_cpu[i]->L2C.upper_level_dcache[i] = &ooo_cpu[i]->L1D;
+    ooo_cpu[i]->L2C.lower_level = &uncore.LLC;
+    ooo_cpu[i]->L2C.l2c_prefetcher_initialize();
 
     // SHARED CACHE
     uncore.LLC.cache_type = IS_LLC;
     uncore.LLC.fill_level = FILL_LLC;
     uncore.LLC.MAX_READ = NUM_CPUS;
-    uncore.LLC.upper_level_icache[i] = &ooo_cpu[i].L2C;
-    uncore.LLC.upper_level_dcache[i] = &ooo_cpu[i].L2C;
+    uncore.LLC.upper_level_icache[i] = &ooo_cpu[i]->L2C;
+    uncore.LLC.upper_level_dcache[i] = &ooo_cpu[i]->L2C;
     uncore.LLC.lower_level = &uncore.DRAM;
 
     // OFF-CHIP DRAM
@@ -793,81 +803,84 @@ main(int argc, char** argv) {
       // proceed one cycle
       current_core_cycle[i]++;
 
-      // cout << "Trying to process instr_id: " << ooo_cpu[i].instr_unique_id <<
-      // " fetch_stall: " << +ooo_cpu[i].fetch_stall; cout << " stall_cycle: "
+      // cout << "Trying to process instr_id: " << ooo_cpu[i]->instr_unique_id
+      // << " fetch_stall: " << +ooo_cpu[i]->fetch_stall; cout << " stall_cycle:
+      // "
       // << stall_cycle[i] << " current: " << current_core_cycle[i] << endl;
 
       // core might be stalled due to page fault or branch misprediction
       if (stall_cycle[i] <= current_core_cycle[i]) {
         // fetch unit
-        if (ooo_cpu[i].ROB.occupancy < ooo_cpu[i].ROB.SIZE) {
+        if (ooo_cpu[i]->ROB.occupancy < ooo_cpu[i]->ROB.SIZE) {
           // handle branch
-          if (ooo_cpu[i].fetch_stall == 0) {
-            ooo_cpu[i].handle_branch();
+          if (ooo_cpu[i]->fetch_stall == 0) {
+            ooo_cpu[i]->handle_branch();
           }
         }
 
         // fetch
-        ooo_cpu[i].fetch_instruction();
+        ooo_cpu[i]->fetch_instruction();
 
         // schedule (including decode latency)
-        uint32_t schedule_index = ooo_cpu[i].ROB.next_schedule;
-        if ((ooo_cpu[i].ROB.entry[schedule_index].scheduled == 0) &&
-            (ooo_cpu[i].ROB.entry[schedule_index].event_cycle <=
+        uint32_t schedule_index = ooo_cpu[i]->ROB.next_schedule;
+        if ((ooo_cpu[i]->ROB.entry[schedule_index].scheduled == 0) &&
+            (ooo_cpu[i]->ROB.entry[schedule_index].event_cycle <=
              current_core_cycle[i])) {
-          ooo_cpu[i].schedule_instruction();
+          ooo_cpu[i]->schedule_instruction();
         }
 
         // execute
-        ooo_cpu[i].execute_instruction();
+        ooo_cpu[i]->execute_instruction();
 
         // memory operation
-        ooo_cpu[i].schedule_memory_instruction();
-        ooo_cpu[i].execute_memory_instruction();
+        ooo_cpu[i]->schedule_memory_instruction();
+        ooo_cpu[i]->execute_memory_instruction();
 
         // complete
-        ooo_cpu[i].update_rob();
+        ooo_cpu[i]->update_rob();
 
         // retire
-        if ((ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) &&
-            (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <=
+        if ((ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].executed ==
+             COMPLETED) &&
+            (ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].event_cycle <=
              current_core_cycle[i])) {
-          ooo_cpu[i].retire_rob();
+          ooo_cpu[i]->retire_rob();
         }
       }
 
       // heartbeat information
       if (!phasesim::Options::hide_heartbeat &&
-          (ooo_cpu[i].num_retired >= ooo_cpu[i].next_print_instruction)) {
+          (ooo_cpu[i]->num_retired >= ooo_cpu[i]->next_print_instruction)) {
         float cumulative_ipc;
         if (warmup_complete[i]) {
           cumulative_ipc =
-              (1.0 * (ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr)) /
-              (current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle);
+              (1.0 * (ooo_cpu[i]->num_retired - ooo_cpu[i]->begin_sim_instr)) /
+              (current_core_cycle[i] - ooo_cpu[i]->begin_sim_cycle);
         } else {
           cumulative_ipc =
-              (1.0 * ooo_cpu[i].num_retired) / current_core_cycle[i];
+              (1.0 * ooo_cpu[i]->num_retired) / current_core_cycle[i];
         }
         float heartbeat_ipc =
-            (1.0 * ooo_cpu[i].num_retired - ooo_cpu[i].last_sim_instr) /
-            (current_core_cycle[i] - ooo_cpu[i].last_sim_cycle);
+            (1.0 * ooo_cpu[i]->num_retired - ooo_cpu[i]->last_sim_instr) /
+            (current_core_cycle[i] - ooo_cpu[i]->last_sim_cycle);
 
         cout << "Heartbeat CPU " << i
-             << " instructions: " << ooo_cpu[i].num_retired
+             << " instructions: " << ooo_cpu[i]->num_retired
              << " cycles: " << current_core_cycle[i];
         cout << " heartbeat IPC: " << heartbeat_ipc
              << " cumulative IPC: " << cumulative_ipc;
         cout << " (Simulation time: " << elapsed_hour << " hr "
              << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
-        ooo_cpu[i].next_print_instruction += phasesim::Options::heartbeat_period;
+        ooo_cpu[i]->next_print_instruction +=
+            phasesim::Options::heartbeat_period;
 
-        ooo_cpu[i].last_sim_instr = ooo_cpu[i].num_retired;
-        ooo_cpu[i].last_sim_cycle = current_core_cycle[i];
+        ooo_cpu[i]->last_sim_instr = ooo_cpu[i]->num_retired;
+        ooo_cpu[i]->last_sim_cycle = current_core_cycle[i];
       }
 
       // check for deadlock
-      if (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].ip &&
-          (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle +
+      if (ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].ip &&
+          (ooo_cpu[i]->ROB.entry[ooo_cpu[i]->ROB.head].event_cycle +
            DEADLOCK_CYCLE) <= current_core_cycle[i]) {
         print_deadlock(i);
       }
@@ -875,7 +888,7 @@ main(int argc, char** argv) {
       // check for warmup
       // warmup complete
       if ((warmup_complete[i] == 0) &&
-          (ooo_cpu[i].num_retired > phasesim::Options::warmup_instructions)) {
+          (ooo_cpu[i]->num_retired > phasesim::Options::warmup_instructions)) {
         warmup_complete[i] = 1;
         all_warmup_complete++;
       }
@@ -896,26 +909,26 @@ main(int argc, char** argv) {
 
       // simulation complete
       if ((all_warmup_complete > NUM_CPUS) && (simulation_complete[i] == 0) &&
-          (ooo_cpu[i].num_retired >=
-           (ooo_cpu[i].begin_sim_instr + ooo_cpu[i].simulation_instructions))) {
+          (ooo_cpu[i]->num_retired >= (ooo_cpu[i]->begin_sim_instr +
+                                       ooo_cpu[i]->simulation_instructions))) {
         simulation_complete[i] = 1;
-        ooo_cpu[i].finish_sim_instr =
-            ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr;
-        ooo_cpu[i].finish_sim_cycle =
-            current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle;
+        ooo_cpu[i]->finish_sim_instr =
+            ooo_cpu[i]->num_retired - ooo_cpu[i]->begin_sim_instr;
+        ooo_cpu[i]->finish_sim_cycle =
+            current_core_cycle[i] - ooo_cpu[i]->begin_sim_cycle;
 
         cout << "Finished CPU " << i
-             << " instructions: " << ooo_cpu[i].finish_sim_instr
-             << " cycles: " << ooo_cpu[i].finish_sim_cycle;
+             << " instructions: " << ooo_cpu[i]->finish_sim_instr
+             << " cycles: " << ooo_cpu[i]->finish_sim_cycle;
         cout << " cumulative IPC: "
-             << ((float)ooo_cpu[i].finish_sim_instr /
-                 ooo_cpu[i].finish_sim_cycle);
+             << ((float)ooo_cpu[i]->finish_sim_instr /
+                 ooo_cpu[i]->finish_sim_cycle);
         cout << " (Simulation time: " << elapsed_hour << " hr "
              << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
 
-        record_roi_stats(i, &ooo_cpu[i].L1D);
-        record_roi_stats(i, &ooo_cpu[i].L1I);
-        record_roi_stats(i, &ooo_cpu[i].L2C);
+        record_roi_stats(i, &ooo_cpu[i]->L1D);
+        record_roi_stats(i, &ooo_cpu[i]->L1I);
+        record_roi_stats(i, &ooo_cpu[i]->L2C);
         record_roi_stats(i, &uncore.LLC);
 
         all_simulation_complete++;
@@ -947,18 +960,18 @@ main(int argc, char** argv) {
     for (uint32_t i = 0; i < NUM_CPUS; i++) {
       cout << endl
            << "CPU " << i << " cumulative IPC: "
-           << (float)(ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr) /
-              (current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle);
+           << (float)(ooo_cpu[i]->num_retired - ooo_cpu[i]->begin_sim_instr) /
+              (current_core_cycle[i] - ooo_cpu[i]->begin_sim_cycle);
       cout << " instructions: "
-           << ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr
-           << " cycles: " << current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle
+           << ooo_cpu[i]->num_retired - ooo_cpu[i]->begin_sim_instr
+           << " cycles: " << current_core_cycle[i] - ooo_cpu[i]->begin_sim_cycle
            << endl;
 #ifndef CRC2_COMPILE
-      print_sim_stats(i, &ooo_cpu[i].L1D);
-      print_sim_stats(i, &ooo_cpu[i].L1I);
-      print_sim_stats(i, &ooo_cpu[i].L2C);
-      ooo_cpu[i].L1D.l1d_prefetcher_final_stats();
-      ooo_cpu[i].L2C.l2c_prefetcher_final_stats();
+      print_sim_stats(i, &ooo_cpu[i]->L1D);
+      print_sim_stats(i, &ooo_cpu[i]->L1I);
+      print_sim_stats(i, &ooo_cpu[i]->L2C);
+      ooo_cpu[i]->L1D.l1d_prefetcher_final_stats();
+      ooo_cpu[i]->L2C.l2c_prefetcher_final_stats();
 #endif
       print_sim_stats(i, &uncore.LLC);
     }
@@ -967,15 +980,16 @@ main(int argc, char** argv) {
 
   cout << endl << "Region of Interest Statistics" << endl;
   for (uint32_t i = 0; i < NUM_CPUS; i++) {
-    cout << endl
-         << "CPU " << i << " cumulative IPC: "
-         << ((float)ooo_cpu[i].finish_sim_instr / ooo_cpu[i].finish_sim_cycle);
-    cout << " instructions: " << ooo_cpu[i].finish_sim_instr
-         << " cycles: " << ooo_cpu[i].finish_sim_cycle << endl;
+    cout
+        << endl
+        << "CPU " << i << " cumulative IPC: "
+        << ((float)ooo_cpu[i]->finish_sim_instr / ooo_cpu[i]->finish_sim_cycle);
+    cout << " instructions: " << ooo_cpu[i]->finish_sim_instr
+         << " cycles: " << ooo_cpu[i]->finish_sim_cycle << endl;
 #ifndef CRC2_COMPILE
-    print_roi_stats(i, &ooo_cpu[i].L1D);
-    print_roi_stats(i, &ooo_cpu[i].L1I);
-    print_roi_stats(i, &ooo_cpu[i].L2C);
+    print_roi_stats(i, &ooo_cpu[i]->L1D);
+    print_roi_stats(i, &ooo_cpu[i]->L1I);
+    print_roi_stats(i, &ooo_cpu[i]->L2C);
 #endif
     print_roi_stats(i, &uncore.LLC);
     cout << "Major fault: " << major_fault[i]
@@ -983,8 +997,8 @@ main(int argc, char** argv) {
   }
 
   for (uint32_t i = 0; i < NUM_CPUS; i++) {
-    ooo_cpu[i].L1D.l1d_prefetcher_final_stats();
-    ooo_cpu[i].L2C.l2c_prefetcher_final_stats();
+    ooo_cpu[i]->L1D.l1d_prefetcher_final_stats();
+    ooo_cpu[i]->L2C.l2c_prefetcher_final_stats();
   }
 
   uncore.LLC.llc_prefetcher_final_stats();

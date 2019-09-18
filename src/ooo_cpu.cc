@@ -2,7 +2,6 @@
 #include "set.h"
 
 // out-of-order core
-O3_CPU ooo_cpu[NUM_CPUS];
 uint64_t current_core_cycle[NUM_CPUS], stall_cycle[NUM_CPUS];
 uint32_t SCHEDULING_LATENCY = 0, EXEC_LATENCY = 0;
 
@@ -101,8 +100,9 @@ O3_CPU::handle_branch() {
 
         arch_instr.num_reg_ops = num_reg_ops;
         arch_instr.num_mem_ops = num_mem_ops;
-        if (num_mem_ops > 0)
+        if (num_mem_ops > 0) {
           arch_instr.is_memory = 1;
+        }
 
         // virtually add this instruction to the ROB
         if (ROB.occupancy < ROB.SIZE) {
@@ -248,8 +248,15 @@ O3_CPU::handle_branch() {
 
         arch_instr.num_reg_ops = num_reg_ops;
         arch_instr.num_mem_ops = num_mem_ops;
-        if (num_mem_ops > 0)
+        if (num_mem_ops > 0) {
           arch_instr.is_memory = 1;
+        }
+
+        cpu_counters.num_instructions = instr_unique_id;
+        cpu_counters.num_cycles = current_core_cycle[cpu];
+
+        // PhaseSim
+        phaseManager.updatePhaseDetectors(arch_instr, cpu_counters);
 
         // virtually add this instruction to the ROB
         if (ROB.occupancy < ROB.SIZE) {
@@ -258,6 +265,8 @@ O3_CPU::handle_branch() {
 
           // branch prediction
           if (arch_instr.is_branch) {
+            cpu_counters.num_branches++;
+
             DP(if (warmup_complete[cpu]) {
               cout << "[BRANCH] instr_id: " << instr_unique_id << " ip: " << hex
                    << arch_instr.ip << dec
