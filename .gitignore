@@ -3,3 +3,9 @@
 
 build
 traces
+data
+
+*pyc
+*.egg-info
+*.ipynb_checkpoints
+
