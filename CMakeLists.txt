@@ -20,6 +20,7 @@ message("Git hash: " ${GITHASH})
 # Add dependencies
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/clipp)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/pin)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/yaml-cpp)
 
 # Sources
 file (GLOB MAIN_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
@@ -38,7 +39,15 @@ set (
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${CLIPP_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIRS}
   )
+
+# Link directories
+link_directories (
+  ${YAML_CPP_LIBRARY_DIRS}
+  )
+
+message (${YAML_CPP_LIBRARY_DIRS})
 
 add_executable (
   ${PROJECT_NAME}
@@ -46,7 +55,13 @@ add_executable (
   ${POLICY_SOURCE}
   )
 
+target_link_libraries (
+  ${PROJECT_NAME}
+  yaml-cpp
+  )
+
 add_dependencies (
   ${PROJECT_NAME}
   ${CLIPP_EXTERNAL_PROJECT}
+  ${YAML_CPP_EXTERNAL_PROJECT}
   )
