@@ -219,15 +219,19 @@ def parse_telemetry(path,
     return df
 
 
-def parse_phases(path, output_df=False):
+def get_detectors():
     find = subprocess.Popen(["find", PHASESIM_HOME, "-type", "f"], stdout=subprocess.PIPE)
     grep = subprocess.check_output(["grep", "PhaseDetector"], stdin=find.stdout)
 
     phase_detectors = [os.path.basename(detector) for detector in grep.decode("ascii").split()]
     phase_detectors = [detector.replace(".h", "") for detector in phase_detectors if detector != "PhaseDetector.h"]
 
+
+def parse_phases(path, output_df=False):
+    detectors = get_detectors()
+
     dfs = {}
-    for detector in phase_detectors:
+    for detector in detectors:
         print("Parsing {}".format(detector))
         dfs[detector] = parse_telemetry(path, detector).iloc[:,0]
 

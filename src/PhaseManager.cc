@@ -3,11 +3,11 @@
 #include "CPIPhaseDetector.h"
 #include "IWSPhaseDetector.h"
 
-PhaseManager::PhaseManager(uint64_t intervalLength)
+PhaseManager::PhaseManager(uint64_t intervalLength, const YAML::Node& config)
     : intervalLength_(intervalLength) {
-  detectors_.push_back(new BCPhaseDetector());
-  detectors_.push_back(new CPIPhaseDetector());
-  detectors_.push_back(new IWSPhaseDetector());
+  detectors_.push_back(new BCPhaseDetector(config));
+  detectors_.push_back(new CPIPhaseDetector(config));
+  detectors_.push_back(new IWSPhaseDetector(config));
 }
 
 bool
@@ -23,7 +23,6 @@ PhaseManager::isNewInterval(uint64_t instr_id) {
 void
 PhaseManager::updatePhaseDetectors(
     const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters) {
-  
   // Run instruction updates with each new instruction
   for (uint32_t i = 0; i < detectors_.size(); i++) {
     detectors_[i]->instructionUpdate(instr, cpu_counters);

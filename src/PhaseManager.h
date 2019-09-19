@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <yaml-cpp/yaml.h>
 #include <vector>
 #include "PhaseDetector.h"
 #include "instruction.h"
@@ -18,7 +19,7 @@ class PhaseManager {
   bool isNewInterval(uint64_t current_cycle);
 
  public:
-  PhaseManager(uint64_t intervalLength);
+  PhaseManager(uint64_t intervalLength, const YAML::Node& config);
 
   void updatePhaseDetectors(
       const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters);

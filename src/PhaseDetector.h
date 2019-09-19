@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 #include "instruction.h"
 #include "utils.h"
 
@@ -15,10 +16,18 @@ class PhaseDetector {
   std::stringstream log_;
   bool newPhase_ = false;
 
+  YAML::Node config_;
+
+  float threshold_ = 0.0;
+
  public:
   void
-  init() {
-    std::cout << "Initialized PhaseDetector: " << name_ << std::endl;
+  init(const YAML::Node& config) {
+    config_ = config[name_];
+    threshold_ = config_["threshold"].as<float>();
+    std::cout << name_ << std::endl;
+    std::cout << config_ << std::endl;
+    std::cout << config_["threshold"] << std::endl;
   }
 
   void

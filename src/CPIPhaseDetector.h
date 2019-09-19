@@ -11,11 +11,10 @@ class CPIPhaseDetector : public PhaseDetector {
   uint64_t prev_num_cycles_ = 0;
   uint64_t prev_num_instructions_ = 0;
 
-  float threshold_ = 0.02;
-
  public:
-  CPIPhaseDetector(float threshold = 0.02) : threshold_(threshold) {
+  CPIPhaseDetector(const YAML::Node& config) {
     name_ = "CPIPhaseDetector";
+    init(config);
   }
 
   void

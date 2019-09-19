@@ -1,12 +1,12 @@
 #define _BSD_SOURCE
 
 #include <clipp.h>
+#include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <sstream>
 #include "ooo_cpu.h"
 #include "uncore.h"
 #include "utils.h"
-#include "yaml-cpp/yaml.h"
 
 using namespace clipp;
 
@@ -623,10 +623,8 @@ main(int argc, char** argv) {
     cout << it->first.as<std::string>() << endl;
 
     YAML::Node attributes = it->second;
+    cout << attributes << endl;
 
-    for (uint32_t i = 0; i < attributes.size(); i++) {
-      cout << attributes[i]["threshold"].as<float>() << endl;
-    }
   }
 
   if (phasesim::Options::knob_low_bandwidth) {
@@ -660,7 +658,7 @@ main(int argc, char** argv) {
 
   int i = 0;
   for (i = 0; i < traces.size(); i++) {
-    ooo_cpu[i] = new O3_CPU(phasesim::Options::phase_interval_length);
+    ooo_cpu[i] = new O3_CPU(phasesim::Options::phase_interval_length, config);
 
     sprintf(ooo_cpu[i]->trace_string, "%s", traces[i].c_str());
 

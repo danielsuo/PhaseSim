@@ -1,6 +1,7 @@
 #ifndef OOO_CPU_H
 #define OOO_CPU_H
 
+#include <yaml-cpp/yaml.h>
 #include "PhaseManager.h"
 #include "cache.h"
 #include "utils.h"
@@ -132,7 +133,8 @@ class O3_CPU {
           L2C_MSHR_SIZE};
 
   // constructor
-  O3_CPU(uint64_t intervalLength) : phaseManager(intervalLength) {
+  O3_CPU(uint64_t intervalLength, const YAML::Node& config)
+      : phaseManager(intervalLength, config) {
     cpu = 0;
 
     // trace
