@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdint.h"
+#include <string>
 
 namespace phasesim {
 struct Options {
@@ -11,6 +12,7 @@ struct Options {
   static bool hide_heartbeat;
   static bool knob_cloudsuite;
   static bool knob_low_bandwidth;
+  static std::string yaml_path;
 };
 
 struct GlobalCounters {

@@ -1,11 +1,13 @@
 *.o
 *.so
 
+compile_commands.json
+
 build
 traces
 data
 
-*pyc
+*.pyc
 *.egg-info
 *.ipynb_checkpoints
 

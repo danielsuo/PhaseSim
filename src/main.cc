@@ -6,6 +6,7 @@
 #include "ooo_cpu.h"
 #include "uncore.h"
 #include "utils.h"
+#include "yaml-cpp/yaml.h"
 
 using namespace clipp;
 
@@ -577,6 +578,8 @@ main(int argc, char** argv) {
            value("#", phasesim::Options::heartbeat_period),
        option("-l", "--phase-interval-length") &
            value("#", phasesim::Options::phase_interval_length),
+       option("-y", "--yaml-path") &
+           value("PATH", phasesim::Options::yaml_path),
        option("--hide-heartbeat")
            .set(phasesim::Options::hide_heartbeat)
            .doc("Hide heartbeat messages"),
@@ -611,6 +614,20 @@ main(int argc, char** argv) {
   cout << "Heartbeat period: " << phasesim::Options::heartbeat_period << endl;
   cout << "Phase interval length: " << phasesim::Options::phase_interval_length
        << endl;
+  cout << "YAML config path: " << phasesim::Options::yaml_path << endl;
+
+  // Read YAML config file
+  YAML::Node config = YAML::LoadFile(phasesim::Options::yaml_path);
+
+  for (YAML::const_iterator it = config.begin(); it != config.end(); ++it) {
+    cout << it->first.as<std::string>() << endl;
+
+    YAML::Node attributes = it->second;
+
+    for (uint32_t i = 0; i < attributes.size(); i++) {
+      cout << attributes[i]["threshold"].as<float>() << endl;
+    }
+  }
 
   if (phasesim::Options::knob_low_bandwidth) {
     DRAM_MTPS = DRAM_IO_FREQ / 4;

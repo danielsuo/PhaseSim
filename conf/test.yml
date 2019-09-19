@@ -1,0 +1,4 @@
+IWSPhaseDetector:
+  - threshold: 0.04
+CPIPhaseDetector:
+  - threshold: 0.02

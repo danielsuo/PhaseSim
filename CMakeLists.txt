@@ -47,8 +47,6 @@ link_directories (
   ${YAML_CPP_LIBRARY_DIRS}
   )
 
-message (${YAML_CPP_LIBRARY_DIRS})
-
 add_executable (
   ${PROJECT_NAME}
   ${MAIN_SOURCE}

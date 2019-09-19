@@ -4,7 +4,7 @@ include (ExternalProject)
 
 set (PIN_EXTERNAL_PROJECT pin-git)
 message (${CMAKE_CURRENT_BINARY_DIR})
-set (PIN_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PIN_EXTERNAL_PROJECT}-prefix/src/${PIN_EXTERNAL_PROJECT}/)
+set (PIN_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PIN_EXTERNAL_PROJECT}-prefix/src/${PIN_EXTERNAL_PROJECT})
 
 set (PIN_URL "https://software.intel.com/sites/landingpage/pintool/downloads/pin-3.7-97619-g0d0c92f4f-gcc-linux.tar.gz")
 if (APPLE)
