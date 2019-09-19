@@ -1,5 +1,9 @@
 #pragma once
 
+// Cycles per instruction phase detector
+// Record CPI for each interval and determine new phase based on % variation
+// from previous interval
+
 #include "PhaseDetector.h"
 
 class CPIPhaseDetector : public PhaseDetector {
@@ -13,11 +17,11 @@ class CPIPhaseDetector : public PhaseDetector {
   CPIPhaseDetector(float threshold = 0.02) : threshold_(threshold) {
     name_ = "CPIPhaseDetector";
   }
+
   void
-  update(
+  intervalUpdate(
       const ooo_model_instr& instr,
       const phasesim::CPUCounters& cpu_counters) override {
-
     uint64_t delta_num_cycles = cpu_counters.num_cycles - prev_num_cycles_;
     uint64_t delta_num_instructions =
         cpu_counters.num_instructions - prev_num_instructions_;

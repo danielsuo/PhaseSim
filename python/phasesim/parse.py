@@ -207,10 +207,10 @@ def parse_telemetry(path,
     for column in columns:
         try:
             val = float(df.iloc[-1][column])
-            if val % 1 == 0:
-                astype[column] = "int64"
-            else:
-                astype[column] = "float64"
+            # if val % 1 == 0:
+                # astype[column] = "int64"
+            # else:
+            astype[column] = "float64"
         except (ValueError, IndexError):
             pass
 
