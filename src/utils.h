@@ -12,6 +12,7 @@ struct Options {
   static bool hide_heartbeat;
   static bool knob_cloudsuite;
   static bool knob_low_bandwidth;
+  static std::string output_dir;
   static std::string yaml_path;
 };
 

@@ -50,11 +50,10 @@ class IWSPhaseDetector : public PhaseDetector {
         ips2_.end(),
         std::inserter(iws_union, iws_union.begin()));
 
-    float delta = ((float)iws_union.size() - (float)iws_intersection.size()) /
+    delta_ = ((float)iws_union.size() - (float)iws_intersection.size()) /
         (float)iws_union.size();
 
-    newPhase_ = delta > threshold_;
-    log_ << delta << " " << iws_intersection.size() << " " << iws_union.size();
+    log_ << iws_intersection.size() << " " << iws_union.size();
 
     if (ips1_is_prev_) {
       ips1_.clear();

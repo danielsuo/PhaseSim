@@ -31,9 +31,13 @@ setup(
             "pytorch"
         ]
     },
-    author="MLM4LYFE",
+    author="Daniel Suo",
     author_email="dsuo@cs.princeton.edu",
-    description="Wrangling and learning from ChampSim output",
+    description="PhaseSim",
     python_requires=">=3.6",
-    packages=find_packages()
+    packages=find_packages(),
+    entry_points="""
+    [console_scripts]
+    run=phasesim.scripts.run:_run
+    """
 )

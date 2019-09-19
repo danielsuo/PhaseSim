@@ -580,6 +580,8 @@ main(int argc, char** argv) {
            value("#", phasesim::Options::phase_interval_length),
        option("-y", "--yaml-path") &
            value("PATH", phasesim::Options::yaml_path),
+       option("-o", "--output-dir").doc("Output directory") &
+           value("PATH", phasesim::Options::output_dir),
        option("--hide-heartbeat")
            .set(phasesim::Options::hide_heartbeat)
            .doc("Hide heartbeat messages"),
@@ -598,6 +600,13 @@ main(int argc, char** argv) {
     cout << make_man_page(cli, argv[0]);
     exit(1);
   }
+
+  // Create output directory
+  // C++17 has std::filesystem::create_directories, but for now, too lazy
+  // to tokenize a directory path and do this the "right" recursive way
+  std::stringstream ss;
+  ss << "mkdir -p " << phasesim::Options::output_dir;
+  std::system(ss.str().c_str());
 
   // initialize knobs
   uint32_t seed_number = 0;
@@ -624,7 +633,6 @@ main(int argc, char** argv) {
 
     YAML::Node attributes = it->second;
     cout << attributes << endl;
-
   }
 
   if (phasesim::Options::knob_low_bandwidth) {

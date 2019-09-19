@@ -22,12 +22,9 @@ class BCPhaseDetector : public PhaseDetector {
         ? (prev_branch_count_ - cpu_counters.num_branches)
         : (cpu_counters.num_branches - prev_branch_count_);
 
-    float delta = (float)diff / (float)prev_branch_count_;
+    delta_ = (float)diff / (float)prev_branch_count_;
 
-    newPhase_ = delta > threshold_;
-
-    log_ << delta << " " << prev_branch_count_ << " "
-         << cpu_counters.num_branches;
+    log_ << prev_branch_count_ << " " << cpu_counters.num_branches;
     prev_branch_count_ = cpu_counters.num_branches;
   }
 };

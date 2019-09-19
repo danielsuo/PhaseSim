@@ -14,11 +14,11 @@ class PhaseDetector {
  protected:
   std::string name_ = "PhaseDetector";
   std::stringstream log_;
-  bool newPhase_ = false;
 
   YAML::Node config_;
 
   float threshold_ = 0.0;
+  float delta_ = 0.0;
 
  public:
   void
@@ -32,7 +32,7 @@ class PhaseDetector {
 
   void
   log() {
-    std::cout << name_ << " " << newPhase_ << " " << log_.str() << std::endl;
+    std::cout << name_ << " " << delta_ << " " << log_.str() << std::endl;
     log_.str(std::string());
   }
 

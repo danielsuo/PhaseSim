@@ -27,10 +27,9 @@ class CPIPhaseDetector : public PhaseDetector {
 
     float curr_cpi = ((float)delta_num_cycles / (float)delta_num_instructions);
 
-    float delta = fabs(curr_cpi - prev_cpi_) / prev_cpi_;
+    delta_ = fabs(curr_cpi - prev_cpi_) / prev_cpi_;
 
-    newPhase_ = delta > threshold_;
-    log_ << delta << " " << curr_cpi << " " << prev_cpi_;
+    log_ << curr_cpi << " " << prev_cpi_;
 
     prev_cpi_ = curr_cpi;
     prev_num_cycles_ = cpu_counters.num_cycles;
