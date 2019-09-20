@@ -2,11 +2,11 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <yaml-cpp/yaml.h>
 #include <cstdarg>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <yaml-cpp/yaml.h>
 #include "instruction.h"
 #include "utils.h"
 
@@ -38,11 +38,13 @@ class PhaseDetector {
 
   virtual void
   instructionUpdate(
-      const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters) {
-  }
+      const ooo_model_instr& instr,
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters) {}
 
   virtual void
   intervalUpdate(
-      const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters) {
-  }
+      const ooo_model_instr& instr,
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters) {}
 };

@@ -252,11 +252,17 @@ O3_CPU::handle_branch() {
           arch_instr.is_memory = 1;
         }
 
-        cpu_counters.num_instructions = instr_unique_id;
-        cpu_counters.num_cycles = current_core_cycle[cpu];
+        curr_counters.instructions = instr_unique_id;
+        curr_counters.cycles = current_core_cycle[cpu];
 
-        // PhaseSim
-        phaseManager.updatePhaseDetectors(arch_instr, cpu_counters);
+        phaseManager.updatePhaseDetectors(
+            arch_instr, curr_counters, prev_counters);
+
+        if (phaseManager.isNewInterval(instr_unique_id)) {
+          // Reset
+          prev_counters = curr_counters;
+          curr_counters.reset();
+        }
 
         // virtually add this instruction to the ROB
         if (ROB.occupancy < ROB.SIZE) {
@@ -265,7 +271,7 @@ O3_CPU::handle_branch() {
 
           // branch prediction
           if (arch_instr.is_branch) {
-            cpu_counters.num_branches++;
+            curr_counters.branches++;
 
             DP(if (warmup_complete[cpu]) {
               cout << "[BRANCH] instr_id: " << instr_unique_id << " ip: " << hex

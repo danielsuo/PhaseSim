@@ -23,7 +23,8 @@ class IWSPhaseDetector : public PhaseDetector {
   void
   instructionUpdate(
       const ooo_model_instr& instr,
-      const phasesim::CPUCounters& cpu_counters) override {
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters) override {
     if (ips1_is_prev_) {
       ips2_.insert(instr.ip);
     } else {
@@ -34,7 +35,8 @@ class IWSPhaseDetector : public PhaseDetector {
   void
   intervalUpdate(
       const ooo_model_instr& instr,
-      const phasesim::CPUCounters& cpu_counters) override {
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters) override {
     std::set<uint64_t> iws_intersection;
     std::set<uint64_t> iws_union;
     std::set_intersection(

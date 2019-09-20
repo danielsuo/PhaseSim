@@ -12,20 +12,17 @@ PhaseManager::PhaseManager(uint64_t intervalLength, const YAML::Node& config)
 
 bool
 PhaseManager::isNewInterval(uint64_t instr_id) {
-  if (instr_id - intervalStartCycle_ >= intervalLength_) {
-    intervalStartCycle_ = instr_id;
-    return true;
-  }
-
-  return false;
+  return instr_id - intervalStartInstruction_ >= intervalLength_;
 }
 
 void
 PhaseManager::updatePhaseDetectors(
-    const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters) {
+    const ooo_model_instr& instr,
+    const phasesim::CPUCounters& curr_counters,
+    const phasesim::CPUCounters& prev_counters) {
   // Run instruction updates with each new instruction
   for (uint32_t i = 0; i < detectors_.size(); i++) {
-    detectors_[i]->instructionUpdate(instr, cpu_counters);
+    detectors_[i]->instructionUpdate(instr, curr_counters, prev_counters);
   }
 
   // If we aren't in a new interval, return
@@ -33,9 +30,12 @@ PhaseManager::updatePhaseDetectors(
     return;
   }
 
+  // Reset start cycle
+  intervalStartInstruction_ = instr.instr_id;
+
   // Otherwise, run interval update and log
   for (uint32_t i = 0; i < detectors_.size(); i++) {
-    detectors_[i]->intervalUpdate(instr, cpu_counters);
+    detectors_[i]->intervalUpdate(instr, curr_counters, prev_counters);
     detectors_[i]->log();
   }
 }

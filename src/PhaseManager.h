@@ -10,17 +10,19 @@
 
 class PhaseManager {
   std::vector<PhaseDetector*> detectors_;
-  uint64_t intervalStartCycle_ = 0;
+  uint64_t intervalStartInstruction_ = 0;
 
   // Settable parameters
   uint64_t intervalLength_ = 10000000;
 
   // Private functions
-  bool isNewInterval(uint64_t current_cycle);
 
  public:
   PhaseManager(uint64_t intervalLength, const YAML::Node& config);
 
+  bool isNewInterval(uint64_t current_cycle);
   void updatePhaseDetectors(
-      const ooo_model_instr& instr, const phasesim::CPUCounters& cpu_counters);
+      const ooo_model_instr& instr,
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters);
 };

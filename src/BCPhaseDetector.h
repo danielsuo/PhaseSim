@@ -6,8 +6,6 @@
 #include "PhaseDetector.h"
 
 class BCPhaseDetector : public PhaseDetector {
-  uint64_t prev_branch_count_ = 0;
-
  public:
   BCPhaseDetector(const YAML::Node& config) {
     name_ = "BCPhaseDetector";
@@ -17,14 +15,9 @@ class BCPhaseDetector : public PhaseDetector {
   void
   intervalUpdate(
       const ooo_model_instr& instr,
-      const phasesim::CPUCounters& cpu_counters) override {
-    uint64_t diff = (prev_branch_count_ > cpu_counters.num_branches)
-        ? (prev_branch_count_ - cpu_counters.num_branches)
-        : (cpu_counters.num_branches - prev_branch_count_);
-
-    delta_ = (float)diff / (float)prev_branch_count_;
-
-    log_ << prev_branch_count_ << " " << cpu_counters.num_branches;
-    prev_branch_count_ = cpu_counters.num_branches;
+      const phasesim::CPUCounters& curr_counters,
+      const phasesim::CPUCounters& prev_counters) override {
+    int64_t diff = curr_counters.branches - prev_counters.branches;
+    delta_ = (float)diff / (float)prev_counters.branches;
   }
 };

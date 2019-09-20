@@ -1,7 +1,8 @@
 #pragma once
 
-#include "stdint.h"
+#include <map>
 #include <string>
+#include "stdint.h"
 
 namespace phasesim {
 struct Options {
@@ -16,12 +17,43 @@ struct Options {
   static std::string yaml_path;
 };
 
-struct GlobalCounters {
-};
+struct GlobalCounters {};
 
 struct CPUCounters {
-  uint64_t num_cycles = 0;
-  uint64_t num_instructions = 0;
-  uint64_t num_branches = 0;
+  // Accumulators: Counters for which we are interested in deltas from one
+  // period to the next (e.g., cycles)
+  uint64_t instructions = 0;
+  uint64_t cycles = 0;
+
+  // Resetable accumulators: Like accumulators, but reset to 0 each interval
+  int64_t branches = 0;
+
+  // Levels: Counters for which we are interested in the current level (e.g., LQ
+  // occupancy)
+  uint64_t lq_occupancy = 0;
+
+  CPUCounters() {}
+
+  friend CPUCounters
+  operator-(const CPUCounters& c1, const CPUCounters& c2) {
+    CPUCounters counters;
+
+    // Accumulators
+    counters.instructions = c1.instructions - c2.instructions;
+    counters.cycles = c1.cycles - c2.cycles;
+
+    // Resetable accumulators
+    counters.branches = c1.branches - c2.branches;
+
+    // Levels
+    counters.lq_occupancy = c1.lq_occupancy;
+
+    return counters;
+  }
+
+  void
+  reset() {
+    branches = 0;
+  }
 };
 } // namespace phasesim

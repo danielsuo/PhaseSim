@@ -33,7 +33,8 @@ class O3_CPU {
 
   // PhaseSim
   PhaseManager phaseManager;
-  phasesim::CPUCounters cpu_counters;
+  phasesim::CPUCounters curr_counters;
+  phasesim::CPUCounters prev_counters;
 
   // trace
   FILE* trace_file;
