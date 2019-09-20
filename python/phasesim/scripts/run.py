@@ -23,11 +23,12 @@ logger = logging.getLogger("phasesim")
 
 
 def job(cmd):
-    output_dir = cmd[-1]
-    output_log = os.path.join(cmd[-1], "log.out")
+    for i, tok in enumerate(cmd):
+        if tok == "-o":
+            output_dir = cmd[i+1]
+    output_log = os.path.join(output_dir, "log.out")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    print(output_dir)
     file = open(output_log, "w")
     proc = subprocess.Popen(cmd, stdout=file)
     proc.wait()

@@ -39,5 +39,6 @@ setup(
     entry_points="""
     [console_scripts]
     run=phasesim.scripts.run:_run
+    pin=phasesim.scripts.pin:_pin
     """
 )

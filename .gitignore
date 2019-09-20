@@ -6,6 +6,7 @@ compile_commands.json
 build
 traces
 data
+spec
 tmp
 
 *.pyc
