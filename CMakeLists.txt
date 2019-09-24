@@ -10,7 +10,7 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 option (BuildPintools "BuildPintools" ON)
-option (BuildTools "BuildTools" OFF)
+option (BuildTools "BuildTools" ON)
 option (BuildTests "BuildTests" OFF)
 
 # Grab git hash
@@ -22,6 +22,7 @@ message("Git hash: " ${GITHASH})
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/clipp)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/pin)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/yaml-cpp)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/simpoint)
 
 # Sources
 file (GLOB MAIN_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
@@ -43,6 +44,8 @@ include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${CLIPP_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIRS}
+  ${PIN_INCLUDE_DIRS}
+  ${PIN_XED_INCLUDE_DIRS}
   )
 
 # Link directories
@@ -88,7 +91,7 @@ if (BuildPintools)
     add_custom_target (
       ${tool}
       ALL
-      COMMAND PIN_ROOT=${PIN_ROOT} make obj-intel64/${tool}.so
+      COMMAND PIN_ROOT=${PIN_ROOT} PHASESIM_HOME=${CMAKE_CURRENT_SOURCE_DIR} make obj-intel64/${tool}.so
       WORKING_DIRECTORY  ${TOOL_SOURCE}
       DEPENDS always_rebuild ${PIN_EXTERNAL_PROJECT}
       )

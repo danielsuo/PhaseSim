@@ -4,30 +4,31 @@
  *  and could serve as the starting point for developing your first PIN tool
  */
 
-#include "pin.H"
-#include <fstream>
-#include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include <fstream>
+#include <iostream>
 #include <string>
+#include "pin.H"
+#include "instruction.h"
 
-#define NUM_INSTR_DESTINATIONS 4
-#define NUM_INSTR_SOURCES 4
+//#define NUM_INSTR_DESTINATIONS 4
+//#define NUM_INSTR_SOURCES 4
 
-typedef struct trace_instr_format {
-  unsigned long long int ip; // instruction pointer (program counter) value
+//typedef struct trace_instr_format {
+  //unsigned long long int ip; // instruction pointer (program counter) value
 
-  unsigned char is_branch;    // is this branch
-  unsigned char branch_taken; // if so, is this taken
+  //unsigned char is_branch; // is this branch
+  //unsigned char branch_taken; // if so, is this taken
 
-  unsigned char
-      destination_registers[NUM_INSTR_DESTINATIONS]; // output registers
-  unsigned char source_registers[NUM_INSTR_SOURCES]; // input registers
+  //unsigned char destination_registers[NUM_INSTR_DESTINATIONS]; // output
+                                                                //registers
+  //unsigned char source_registers[NUM_INSTR_SOURCES]; // input registers
 
-  unsigned long long int
-      destination_memory[NUM_INSTR_DESTINATIONS];          // output memory
-  unsigned long long int source_memory[NUM_INSTR_SOURCES]; // input memory
-} trace_instr_format_t;
+  //unsigned long long int destination_memory[NUM_INSTR_DESTINATIONS]; // output
+                                                                      //memory
+  //unsigned long long int source_memory[NUM_INSTR_SOURCES]; // input memory
+//} trace_instr_format_t;
 
 /* ================================================================== */
 // Global variables
@@ -35,26 +36,36 @@ typedef struct trace_instr_format {
 
 UINT64 instrCount = 0;
 
-FILE *out;
+FILE* out;
 
 bool output_file_closed = false;
 bool tracing_on = false;
 
-trace_instr_format_t curr_instr;
+input_instr curr_instr;
 
 /* ===================================================================== */
 // Command line switches
 /* ===================================================================== */
-KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o",
-                            "champsim.trace",
-                            "specify file name for Champsim tracer output");
+KNOB<string> KnobOutputFile(
+    KNOB_MODE_WRITEONCE,
+    "pintool",
+    "o",
+    "champsim.trace",
+    "specify file name for Champsim tracer output");
 
-KNOB<UINT64>
-    KnobSkipInstructions(KNOB_MODE_WRITEONCE, "pintool", "s", "0",
-                         "How many instructions to skip before tracing begins");
+KNOB<UINT64> KnobSkipInstructions(
+    KNOB_MODE_WRITEONCE,
+    "pintool",
+    "s",
+    "0",
+    "How many instructions to skip before tracing begins");
 
-KNOB<UINT64> KnobTraceInstructions(KNOB_MODE_WRITEONCE, "pintool", "t",
-                                   "1000000", "How many instructions to trace");
+KNOB<UINT64> KnobTraceInstructions(
+    KNOB_MODE_WRITEONCE,
+    "pintool",
+    "t",
+    "1000000",
+    "How many instructions to trace");
 
 /* ===================================================================== */
 // Utilities
@@ -63,7 +74,8 @@ KNOB<UINT64> KnobTraceInstructions(KNOB_MODE_WRITEONCE, "pintool", "t",
 /*!
  *  Print out help message.
  */
-INT32 Usage() {
+INT32
+Usage() {
   cerr << "This tool creates a register and memory access trace" << endl
        << "Specify the output trace file with -o" << endl
        << "Specify the number of instructions to skip before tracing with -s"
@@ -80,7 +92,8 @@ INT32 Usage() {
 // Analysis routines
 /* ===================================================================== */
 
-void BeginInstruction(VOID *ip, UINT32 op_code, VOID *opstring) {
+void
+BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
   instrCount++;
   // printf("[%p %u %s ", ip, opcode, (char*)opstring);
 
@@ -99,6 +112,7 @@ void BeginInstruction(VOID *ip, UINT32 op_code, VOID *opstring) {
   curr_instr.ip = (unsigned long long int)ip;
 
   curr_instr.is_branch = 0;
+  curr_instr.category = category;
   curr_instr.branch_taken = 0;
 
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
@@ -112,7 +126,8 @@ void BeginInstruction(VOID *ip, UINT32 op_code, VOID *opstring) {
   }
 }
 
-void EndInstruction() {
+void
+EndInstruction() {
   // printf("%d]\n", (int)instrCount);
 
   // printf("\n");
@@ -123,7 +138,7 @@ void EndInstruction() {
     if (instrCount <=
         (KnobTraceInstructions.Value() + KnobSkipInstructions.Value())) {
       // keep tracing
-      fwrite(&curr_instr, sizeof(trace_instr_format_t), 1, out);
+      fwrite(&curr_instr, sizeof(input_instr), 1, out);
     } else {
       tracing_on = false;
       // close down the file, we're done tracing
@@ -137,7 +152,8 @@ void EndInstruction() {
   }
 }
 
-void BranchOrNot(UINT32 taken) {
+void
+BranchOrNot(UINT32 taken) {
   // printf("[%d] ", taken);
 
   curr_instr.is_branch = 1;
@@ -146,7 +162,8 @@ void BranchOrNot(UINT32 taken) {
   }
 }
 
-void RegRead(UINT32 i, UINT32 index) {
+void
+RegRead(UINT32 i, UINT32 index) {
   if (!tracing_on)
     return;
 
@@ -183,7 +200,8 @@ void RegRead(UINT32 i, UINT32 index) {
   }
 }
 
-void RegWrite(REG i, UINT32 index) {
+void
+RegWrite(REG i, UINT32 index) {
   if (!tracing_on)
     return;
 
@@ -225,7 +243,8 @@ void RegWrite(REG i, UINT32 index) {
      */
 }
 
-void MemoryRead(VOID *addr, UINT32 index, UINT32 read_size) {
+void
+MemoryRead(VOID* addr, UINT32 index, UINT32 read_size) {
   if (!tracing_on)
     return;
 
@@ -249,7 +268,8 @@ void MemoryRead(VOID *addr, UINT32 index, UINT32 read_size) {
   }
 }
 
-void MemoryWrite(VOID *addr, UINT32 index) {
+void
+MemoryWrite(VOID* addr, UINT32 index) {
   if (!tracing_on)
     return;
 
@@ -284,24 +304,47 @@ void MemoryWrite(VOID *addr, UINT32 index) {
 /* ===================================================================== */
 
 // Is called for every instruction and instruments reads and writes
-VOID Instruction(INS ins, VOID *v) {
+VOID
+Instruction(INS ins, VOID* v) {
   // begin each instruction with this function
   UINT32 opcode = INS_Opcode(ins);
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BeginInstruction, IARG_INST_PTR,
-                 IARG_UINT32, opcode, IARG_END);
+  std::string opcode_string = OPCODE_StringShort(opcode);
+  UINT32 category = INS_Category(ins);
+  std::string category_string = CATEGORY_StringShort(category);
+
+  std::cout << opcode_string << " " << category_string << std::endl;
+
+  INS_InsertCall(
+      ins,
+      IPOINT_BEFORE,
+      (AFUNPTR)BeginInstruction,
+      IARG_INST_PTR,
+      IARG_UINT32,
+      opcode,
+      IARG_UINT32,
+      category,
+      IARG_END);
 
   // instrument branch instructions
-  if (INS_IsBranch(ins))
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN,
-                   IARG_END);
+  if (INS_IsBranch(ins)) {
+    INS_InsertCall(
+        ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
+  }
 
   // instrument register reads
   UINT32 readRegCount = INS_MaxNumRRegs(ins);
   for (UINT32 i = 0; i < readRegCount; i++) {
     UINT32 regNum = INS_RegR(ins, i);
 
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)RegRead, IARG_UINT32, regNum,
-                   IARG_UINT32, i, IARG_END);
+    INS_InsertCall(
+        ins,
+        IPOINT_BEFORE,
+        (AFUNPTR)RegRead,
+        IARG_UINT32,
+        regNum,
+        IARG_UINT32,
+        i,
+        IARG_END);
   }
 
   // instrument register writes
@@ -309,8 +352,15 @@ VOID Instruction(INS ins, VOID *v) {
   for (UINT32 i = 0; i < writeRegCount; i++) {
     UINT32 regNum = INS_RegW(ins, i);
 
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)RegWrite, IARG_UINT32, regNum,
-                   IARG_UINT32, i, IARG_END);
+    INS_InsertCall(
+        ins,
+        IPOINT_BEFORE,
+        (AFUNPTR)RegWrite,
+        IARG_UINT32,
+        regNum,
+        IARG_UINT32,
+        i,
+        IARG_END);
   }
 
   // instrument memory reads and writes
@@ -321,13 +371,28 @@ VOID Instruction(INS ins, VOID *v) {
     if (INS_MemoryOperandIsRead(ins, memOp)) {
       UINT32 read_size = INS_MemoryReadSize(ins);
 
-      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)MemoryRead, IARG_MEMORYOP_EA,
-                     memOp, IARG_UINT32, memOp, IARG_UINT32, read_size,
-                     IARG_END);
+      INS_InsertCall(
+          ins,
+          IPOINT_BEFORE,
+          (AFUNPTR)MemoryRead,
+          IARG_MEMORYOP_EA,
+          memOp,
+          IARG_UINT32,
+          memOp,
+          IARG_UINT32,
+          read_size,
+          IARG_END);
     }
     if (INS_MemoryOperandIsWritten(ins, memOp)) {
-      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)MemoryWrite, IARG_MEMORYOP_EA,
-                     memOp, IARG_UINT32, memOp, IARG_END);
+      INS_InsertCall(
+          ins,
+          IPOINT_BEFORE,
+          (AFUNPTR)MemoryWrite,
+          IARG_MEMORYOP_EA,
+          memOp,
+          IARG_UINT32,
+          memOp,
+          IARG_END);
     }
   }
 
@@ -342,7 +407,8 @@ VOID Instruction(INS ins, VOID *v) {
  * @param[in]   v               value specified by the tool in the
  *                              PIN_AddFiniFunction function call
  */
-VOID Fini(INT32 code, VOID *v) {
+VOID
+Fini(INT32 code, VOID* v) {
   // close the file if it hasn't already been closed
   if (!output_file_closed) {
     fclose(out);
@@ -358,13 +424,14 @@ VOID Fini(INT32 code, VOID *v) {
  * @param[in]   argv            array of command line arguments,
  *                              including pin -t <toolname> -- ...
  */
-int main(int argc, char *argv[]) {
+int
+main(int argc, char* argv[]) {
   // Initialize PIN library. Print help message if -h(elp) is specified
   // in the command line or the command line is invalid
   if (PIN_Init(argc, argv))
     return Usage();
 
-  const char *fileName = KnobOutputFile.Value().c_str();
+  const char* fileName = KnobOutputFile.Value().c_str();
 
   out = fopen(fileName, "ab");
   if (!out) {

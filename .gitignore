@@ -1,5 +1,7 @@
 *.o
 *.so
+*.log
+*.trace
 
 compile_commands.json
 

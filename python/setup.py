@@ -40,5 +40,7 @@ setup(
     [console_scripts]
     run=phasesim.scripts.run:_run
     pin=phasesim.scripts.pin:_pin
+    trace=phasesim.scripts.trace:_trace
+    simpoint=phasesim.scripts.simpoint:_simpoint
     """
 )

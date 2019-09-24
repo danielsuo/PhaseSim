@@ -10,11 +10,16 @@
 #define NUM_INSTR_SOURCES 4
 
 #include "set.h"
+#include "xed/xed-category-enum.h"
 
 class input_instr {
  public:
   // instruction pointer or PC (Program Counter)
   uint64_t ip;
+
+  // instruction category
+  // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
+  uint8_t category;
 
   // branch info
   uint8_t is_branch;
@@ -28,6 +33,7 @@ class input_instr {
 
   input_instr() {
     ip = 0;
+    category = 0;
     is_branch = 0;
     branch_taken = 0;
 
@@ -86,8 +92,8 @@ class ooo_model_instr {
   uint64_t instr_id, ip, fetch_producer, producer_id, translated_cycle,
       fetched_cycle, execute_begin_cycle, retired_cycle, event_cycle;
 
-  uint8_t is_branch, is_memory, branch_taken, branch_mispredicted, translated,
-      data_translated, source_added[NUM_INSTR_SOURCES],
+  uint8_t category, is_branch, is_memory, branch_taken, branch_mispredicted,
+      translated, data_translated, source_added[NUM_INSTR_SOURCES],
       destination_added[NUM_INSTR_DESTINATIONS_SPARC], is_producer, is_consumer,
       reg_RAW_producer, reg_ready, mem_ready, asid[2],
       reg_RAW_checked[NUM_INSTR_SOURCES];
