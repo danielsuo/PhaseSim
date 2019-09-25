@@ -43,7 +43,7 @@ class BBVPhaseDetector : public PhaseDetector {
       const ooo_model_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
-    uint64_t sum = 0;
+    delta_ = 0;
     for (uint32_t i = 0; i < bbv_dim_; i++) {
       delta_ +=
           (lib1_[i] > lib2_[i]) ? lib1_[i] - lib2_[i] : lib2_[i] - lib1_[i];
