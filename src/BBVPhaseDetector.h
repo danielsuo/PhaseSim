@@ -5,6 +5,7 @@
 // sufficiently large
 // Distance = (Union - Intersection) / Union
 
+#include <numeric>
 #include <vector>
 #include "PhaseDetector.h"
 
@@ -43,10 +44,13 @@ class BBVPhaseDetector : public PhaseDetector {
       const ooo_model_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
+
+    uint64_t sum1 = std::accumulate(lib1_.begin(), lib1_.end(), 0);
+    uint64_t sum2 = std::accumulate(lib2_.begin(), lib2_.end(), 0);
+
     delta_ = 0;
     for (uint32_t i = 0; i < bbv_dim_; i++) {
-      delta_ +=
-          (lib1_[i] > lib2_[i]) ? lib1_[i] - lib2_[i] : lib2_[i] - lib1_[i];
+      delta_ += fabs(sum1 - sum2);
     }
 
     if (lib1_is_prev_) {

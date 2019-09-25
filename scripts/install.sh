@@ -18,6 +18,9 @@ git clone https://github.com/danielsuo/spec
 
 pushd spec
 git lfs pull
+chmod +x -R ./bin
+chmod +x -R ./tools/bin
+
 ./install.sh
 ln -s $(pwd)/../ref/spec/gcc-mixed_asm_C.cfg config/default.cfg
 ./bin/runcpu -a build all

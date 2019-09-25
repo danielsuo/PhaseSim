@@ -112,7 +112,7 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
   curr_instr.ip = (unsigned long long int)ip;
 
   curr_instr.is_branch = 0;
-  curr_instr.category = category;
+  //curr_instr.category = category;
   curr_instr.branch_taken = 0;
 
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
