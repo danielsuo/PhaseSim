@@ -19,7 +19,7 @@ class input_instr {
 
   // instruction category
   // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
-  uint8_t category;
+  //uint8_t category;
 
   // branch info
   uint8_t is_branch;
@@ -33,7 +33,7 @@ class input_instr {
 
   input_instr() {
     ip = 0;
-    category = 0;
+    //category = 0;
     is_branch = 0;
     branch_taken = 0;
 

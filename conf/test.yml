@@ -4,3 +4,5 @@ CPIPhaseDetector:
   threshold: 0.02
 BCPhaseDetector:
   threshold: 0.02
+BBVPhaseDetector:
+  threshold: 0.02

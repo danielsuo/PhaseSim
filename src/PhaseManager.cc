@@ -1,10 +1,12 @@
 #include "PhaseManager.h"
+#include "BBVPhaseDetector.h"
 #include "BCPhaseDetector.h"
 #include "CPIPhaseDetector.h"
 #include "IWSPhaseDetector.h"
 
 PhaseManager::PhaseManager(uint64_t intervalLength, const YAML::Node& config)
     : intervalLength_(intervalLength) {
+  detectors_.push_back(new BBVPhaseDetector(config));
   detectors_.push_back(new BCPhaseDetector(config));
   detectors_.push_back(new CPIPhaseDetector(config));
   detectors_.push_back(new IWSPhaseDetector(config));
