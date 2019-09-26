@@ -17,7 +17,7 @@ class CPIPhaseDetector : public PhaseDetector {
 
   void
   intervalUpdate(
-      const ooo_model_instr& instr,
+      const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
     phasesim::CPUCounters diff = curr_counters - prev_counters;

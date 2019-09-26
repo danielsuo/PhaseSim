@@ -107,10 +107,19 @@ if (BuildTools)
       ${tool_path}
       )
 
+    if (tool_name MATCHES "hasty")
+      target_sources (
+        ${tool_name}
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PhaseManager.cc
+        )
+    endif(tool_name MATCHES "hasty")
+
     target_link_libraries (
       ${tool_name}
       readline
       z
+      yaml-cpp
       ${CMAKE_THREAD_LIBS_INIT}
       )
   endforeach (tool_path)

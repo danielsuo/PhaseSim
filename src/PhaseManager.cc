@@ -19,7 +19,7 @@ PhaseManager::isNewInterval(uint64_t instr_id) {
 
 void
 PhaseManager::updatePhaseDetectors(
-    const ooo_model_instr& instr,
+    const input_instr& instr,
     const phasesim::CPUCounters& curr_counters,
     const phasesim::CPUCounters& prev_counters) {
   // Run instruction updates with each new instruction
@@ -28,12 +28,12 @@ PhaseManager::updatePhaseDetectors(
   }
 
   // If we aren't in a new interval, return
-  if (!isNewInterval(instr.instr_id)) {
+  if (!isNewInterval(curr_counters.instructions)) {
     return;
   }
 
   // Reset start cycle
-  intervalStartInstruction_ = instr.instr_id;
+  intervalStartInstruction_ = curr_counters.instructions;
 
   // Otherwise, run interval update and log
   for (uint32_t i = 0; i < detectors_.size(); i++) {
