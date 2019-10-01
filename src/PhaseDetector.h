@@ -38,13 +38,13 @@ class PhaseDetector {
 
   virtual void
   instructionUpdate(
-      const ooo_model_instr& instr,
+      const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) {}
 
   virtual void
   intervalUpdate(
-      const ooo_model_instr& instr,
+      const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) {}
 };

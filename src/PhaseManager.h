@@ -22,7 +22,7 @@ class PhaseManager {
 
   bool isNewInterval(uint64_t current_cycle);
   void updatePhaseDetectors(
-      const ooo_model_instr& instr,
+      const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters);
 };

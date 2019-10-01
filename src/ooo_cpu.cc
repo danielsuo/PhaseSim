@@ -198,7 +198,7 @@ O3_CPU::handle_branch() {
 
         arch_instr.instr_id = instr_unique_id;
         arch_instr.ip = current_instr.ip;
-        //arch_instr.category = current_instr.category;
+        // arch_instr.category = current_instr.category;
         arch_instr.is_branch = current_instr.is_branch;
         arch_instr.branch_taken = current_instr.branch_taken;
 
@@ -257,7 +257,7 @@ O3_CPU::handle_branch() {
         curr_counters.cycles = current_core_cycle[cpu];
 
         phaseManager.updatePhaseDetectors(
-            arch_instr, curr_counters, prev_counters);
+            current_instr, curr_counters, prev_counters);
 
         if (phaseManager.isNewInterval(instr_unique_id)) {
           // Reset

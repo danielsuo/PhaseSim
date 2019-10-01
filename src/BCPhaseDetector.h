@@ -14,7 +14,7 @@ class BCPhaseDetector : public PhaseDetector {
 
   void
   intervalUpdate(
-      const ooo_model_instr& instr,
+      const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
     int64_t diff = curr_counters.branches - prev_counters.branches;
