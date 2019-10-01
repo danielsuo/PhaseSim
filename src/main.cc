@@ -585,6 +585,9 @@ main(int argc, char** argv) {
        option("--hide-heartbeat")
            .set(phasesim::Options::hide_heartbeat)
            .doc("Hide heartbeat messages"),
+       option("--save-llc-accesses")
+           .set(phasesim::Options::save_llc_accesses)
+           .doc("Save LLC access stream"),
        option("--knob-cloudsuite")
            .set(phasesim::Options::knob_cloudsuite)
            .doc("Use cloudsuite trace"),
@@ -607,6 +610,14 @@ main(int argc, char** argv) {
   std::stringstream ss;
   ss << "mkdir -p " << phasesim::Options::output_dir;
   std::system(ss.str().c_str());
+
+  if (phasesim::Options::save_llc_accesses) {
+    ss.str(std::string());
+    ss << phasesim::Options::output_dir << "/llc.accesses";
+    phasesim::Files::llc_accesses.open(ss.str(), ios::out | ios::binary);
+
+    cout << "Saving LLC access data to " << ss.str() << endl;
+  }
 
   // initialize knobs
   uint32_t seed_number = 0;

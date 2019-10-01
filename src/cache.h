@@ -2,6 +2,7 @@
 #define CACHE_H
 
 #include "memory_class.h"
+#include "utils.h"
 
 // PAGE
 extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
@@ -205,6 +206,15 @@ class CACHE : public MEMORY {
   void add_mshr(PACKET*packet), update_fill_cycle(),
       llc_initialize_replacement(),
       update_replacement_state(
+          uint32_t cpu,
+          uint32_t set,
+          uint32_t way,
+          uint64_t full_addr,
+          uint64_t ip,
+          uint64_t victim_addr,
+          uint32_t type,
+          uint8_t hit),
+      llc_update_replacement_state_wrapper(
           uint32_t cpu,
           uint32_t set,
           uint32_t way,

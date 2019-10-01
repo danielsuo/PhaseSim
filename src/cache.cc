@@ -43,11 +43,11 @@ CACHE::handle_fill() {
 
 #ifdef LLC_BYPASS
     if ((cache_type == IS_LLC) && (way == LLC_WAY)) { // this is a bypass that
-                                                      // does not fill the LLC
+      // does not fill the LLC
 
       // update replacement policy
       if (cache_type == IS_LLC) {
-        llc_update_replacement_state(
+        llc_update_replacement_state_wrapper(
             fill_cpu,
             set,
             way,
@@ -173,7 +173,7 @@ CACHE::handle_fill() {
 
       // update replacement policy
       if (cache_type == IS_LLC) {
-        llc_update_replacement_state(
+        llc_update_replacement_state_wrapper(
             fill_cpu,
             set,
             way,
@@ -267,7 +267,7 @@ CACHE::handle_writeback() {
     if (way >= 0) { // writeback hit (or RFO hit for L1D)
 
       if (cache_type == IS_LLC) {
-        llc_update_replacement_state(
+        llc_update_replacement_state_wrapper(
             writeback_cpu,
             set,
             way,
@@ -333,7 +333,7 @@ CACHE::handle_writeback() {
         int mshr_index = check_mshr(&WQ.entry[index]);
 
         if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a
-                                                                  // new miss
+          // new miss
 
           if (cache_type == IS_LLC) {
             // check to make sure the DRAM RQ has room for this LLC RFO miss
@@ -508,7 +508,7 @@ CACHE::handle_writeback() {
 
           // update replacement policy
           if (cache_type == IS_LLC) {
-            llc_update_replacement_state(
+            llc_update_replacement_state_wrapper(
                 writeback_cpu,
                 set,
                 way,
@@ -625,7 +625,7 @@ CACHE::handle_read() {
 
         // update replacement policy
         if (cache_type == IS_LLC) {
-          llc_update_replacement_state(
+          llc_update_replacement_state_wrapper(
               read_cpu,
               set,
               way,
@@ -686,7 +686,7 @@ CACHE::handle_read() {
         int mshr_index = check_mshr(&RQ.entry[index]);
 
         if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a
-                                                                  // new miss
+          // new miss
 
           if (cache_type == IS_LLC) {
             // check to make sure the DRAM RQ has room for this LLC read miss
@@ -896,7 +896,7 @@ CACHE::handle_prefetch() {
 
         // update replacement policy
         if (cache_type == IS_LLC) {
-          llc_update_replacement_state(
+          llc_update_replacement_state_wrapper(
               prefetch_cpu,
               set,
               way,
@@ -975,7 +975,7 @@ CACHE::handle_prefetch() {
         int mshr_index = check_mshr(&PQ.entry[index]);
 
         if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a
-                                                                  // new miss
+          // new miss
 
           DP(if (warmup_complete[PQ.entry[index].cpu]) {
             cout << "[" << NAME << "_PQ] " << __func__
@@ -1814,4 +1814,25 @@ CACHE::get_size(uint8_t queue_type, uint64_t address) {
 void
 CACHE::increment_WQ_FULL(uint64_t address) {
   WQ.FULL++;
+}
+
+void
+CACHE::llc_update_replacement_state_wrapper(
+    uint32_t cpu,
+    uint32_t set,
+    uint32_t way,
+    uint64_t full_addr,
+    uint64_t ip,
+    uint64_t victim_addr,
+    uint32_t type,
+    uint8_t hit) {
+  if (phasesim::Options::save_llc_accesses) {
+    phasesim::REPLACEMENT_STATS stats{
+        cpu, set, way, full_addr, ip, victim_addr, type};
+
+    phasesim::Files::llc_accesses.write(
+        (char*)&stats, sizeof(phasesim::REPLACEMENT_STATS));
+  }
+  llc_update_replacement_state(
+      cpu, set, way, full_addr, ip, victim_addr, type, hit);
 }

@@ -50,7 +50,7 @@ class BBVPhaseDetector : public PhaseDetector {
 
     delta_ = 0;
     for (uint32_t i = 0; i < bbv_dim_; i++) {
-      delta_ += fabs(sum1 - sum2);
+      delta_ += fabs(((float)lib1_[i]) / sum1 - ((float)lib2_[i]) / sum2);
     }
 
     if (lib1_is_prev_) {

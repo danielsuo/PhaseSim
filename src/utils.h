@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 #include "stdint.h"
 
 namespace phasesim {
@@ -10,11 +11,16 @@ struct Options {
   static uint64_t simulation_instructions;
   static uint64_t heartbeat_period;
   static uint64_t phase_interval_length;
+  static bool save_llc_accesses;
   static bool hide_heartbeat;
   static bool knob_cloudsuite;
   static bool knob_low_bandwidth;
   static std::string output_dir;
   static std::string yaml_path;
+};
+
+struct Files {
+  static std::ofstream llc_accesses;
 };
 
 struct GlobalCounters {};
@@ -55,5 +61,17 @@ struct CPUCounters {
   reset() {
     branches = 0;
   }
+};
+
+struct REPLACEMENT_STATS {
+  uint32_t cpu;
+  uint32_t set;
+  uint32_t way;
+  uint64_t full_addr;
+  uint64_t ip;
+  uint64_t victim_addr;
+  uint32_t type;
+  uint32_t cache_type;
+  uint8_t hit;
 };
 } // namespace phasesim
