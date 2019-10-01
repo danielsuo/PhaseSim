@@ -226,6 +226,8 @@ def get_detectors():
     phase_detectors = [os.path.basename(detector) for detector in grep.decode("ascii").split()]
     phase_detectors = [detector.replace(".h", "") for detector in phase_detectors if detector != "PhaseDetector.h"]
 
+    return phase_detectors
+
 
 def parse_phases(path, output_df=False):
     detectors = get_detectors()

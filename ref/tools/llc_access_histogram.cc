@@ -44,7 +44,7 @@ main(int argc, char* argv[]) {
     }
 
     if (num_instructions % interval_length == 0) {
-      cout << "Tabulating results and clearing access histogram: "
+      cout << "Tabulating results and clearing access histogram "
            << num_instructions << endl;
 
       for (auto el : access_histogram) {
@@ -59,18 +59,11 @@ main(int argc, char* argv[]) {
     num_instructions++;
   }
 
-  cout << "Tabulating results and clearing access histogram: "
-       << num_instructions << endl;
-
-  for (auto el : access_histogram) {
-    count_histogram[el.second]++;
-  }
-
-  access_histogram.clear();
-
   for (auto el : count_histogram) {
     cout << el.first << ": " << el.second << endl;
   }
+
+  file.close();
 
   return 0;
 }
