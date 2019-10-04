@@ -17,7 +17,7 @@ PhaseManager::isNewInterval(uint64_t instr_id) {
   return instr_id - intervalStartInstruction_ >= intervalLength_;
 }
 
-void
+bool
 PhaseManager::updatePhaseDetectors(
     const input_instr& instr,
     const phasesim::CPUCounters& curr_counters,
@@ -29,7 +29,7 @@ PhaseManager::updatePhaseDetectors(
 
   // If we aren't in a new interval, return
   if (!isNewInterval(curr_counters.instructions)) {
-    return;
+    return false;
   }
 
   // Reset start cycle
@@ -40,4 +40,6 @@ PhaseManager::updatePhaseDetectors(
     detectors_[i]->intervalUpdate(instr, curr_counters, prev_counters);
     detectors_[i]->log();
   }
+
+  return true;
 }

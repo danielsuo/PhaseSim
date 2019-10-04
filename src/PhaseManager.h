@@ -16,12 +16,12 @@ class PhaseManager {
   uint64_t intervalLength_ = 10000000;
 
   // Private functions
+  bool isNewInterval(uint64_t current_cycle);
 
  public:
   PhaseManager(uint64_t intervalLength, const YAML::Node& config);
 
-  bool isNewInterval(uint64_t current_cycle);
-  void updatePhaseDetectors(
+  bool updatePhaseDetectors(
       const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters);

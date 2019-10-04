@@ -48,7 +48,7 @@ main(int argc, char* argv[]) {
 
   vector<PhaseDetector*> detectors;
 
-  YAML::Node config = YAML::LoadFile("../conf/test.yml");
+  YAML::Node config = YAML::LoadFile(conf_path);
 
   PhaseManager manager(interval_length, config);
 
@@ -65,7 +65,8 @@ main(int argc, char* argv[]) {
   uint64_t interval_start = 0;
   while (fread(&instr, sizeof(instr), 1, trace_file)) {
     if (counters["instr::total"] % heartbeat_period == 0) {
-      cout << "Processed " << counters["instr::total"] << " instructions."
+      cout << endl
+           << "Processed " << counters["instr::total"] << " instructions."
            << endl;
     }
 
@@ -75,9 +76,10 @@ main(int argc, char* argv[]) {
       curr_counters.branches++;
     }
 
-    manager.updatePhaseDetectors(instr, curr_counters, prev_counters);
+    bool isNewInterval =
+        manager.updatePhaseDetectors(instr, curr_counters, prev_counters);
 
-    if (manager.isNewInterval(curr_counters.instructions)) {
+    if (isNewInterval) {
       prev_counters = curr_counters;
       curr_counters.reset();
     }

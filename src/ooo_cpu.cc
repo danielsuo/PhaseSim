@@ -256,10 +256,10 @@ O3_CPU::handle_branch() {
         curr_counters.instructions = instr_unique_id;
         curr_counters.cycles = current_core_cycle[cpu];
 
-        phaseManager.updatePhaseDetectors(
+        bool isNewInterval = phaseManager.updatePhaseDetectors(
             current_instr, curr_counters, prev_counters);
 
-        if (phaseManager.isNewInterval(instr_unique_id)) {
+        if (isNewInterval) {
           // Reset
           prev_counters = curr_counters;
           curr_counters.reset();

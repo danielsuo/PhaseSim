@@ -107,13 +107,13 @@ if (BuildTools)
       ${tool_path}
       )
 
-    if (tool_name MATCHES "hasty")
+    if (tool_name MATCHES "hasty_phase")
       target_sources (
         ${tool_name}
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/PhaseManager.cc
         )
-    endif(tool_name MATCHES "hasty")
+    endif(tool_name MATCHES "hasty_phase")
 
     target_link_libraries (
       ${tool_name}

@@ -32,8 +32,11 @@ for i in `find $DIR/spec/benchspec -maxdepth 3 -type d | grep run`; do
   # Form commands
   bbv=$(dirname $cmds)/$benchmark.bbv
   touch $bbv
-  sed -i "s@^@cd $rundir \&\& valgrind --tool=exp-bbv --bb-out-file=$bbv @" $invoke
 
+  # Export OMP variables every time
+  sed -i "s@^@export OMP_NUM_THREADS=1 \&\& cd $rundir \&\& valgrind --tool=exp-bbv --bb-out-file=$bbv @" $invoke
+
+  # Only take the first output
   echo $(head $invoke -n 1) | tee -a $cmds
 done
 

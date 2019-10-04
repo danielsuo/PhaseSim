@@ -18,6 +18,7 @@ class BCPhaseDetector : public PhaseDetector {
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
     int64_t diff = curr_counters.branches - prev_counters.branches;
-    delta_ = (float)diff / (float)prev_counters.branches;
+    delta_ = fabs((float)diff / (float)prev_counters.branches);
+    log_ << curr_counters.branches << " " << prev_counters.branches;
   }
 };
