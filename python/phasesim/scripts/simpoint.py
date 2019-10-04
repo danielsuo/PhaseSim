@@ -20,11 +20,13 @@ def simpoint(bbv_file, k, max_k, simpoint_file, weight_file, verbose, args):
 
     args = [arg.replace("--", "-") for arg in args]
     cmd = [
-        simpoint_binary, "-loadFVFile", bbv_file, "-maxK", str(max_k),
-        "-saveSimpoints", simpoint_file, "-saveSimpointWeights", weight_file
+        simpoint_binary, "-loadFVFile", bbv_file, "-saveSimpoints",
+        simpoint_file, "-saveSimpointWeights", weight_file
     ]
     if k is not None:
         cmd.extend(["-k", k])
+    else:
+        cmd.extend(["-maxK", str(max_k)])
 
     cmd.extend(args)
 
