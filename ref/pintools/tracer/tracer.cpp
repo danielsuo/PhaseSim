@@ -9,26 +9,21 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "pin.H"
 #include "instruction.h"
+#include "pin.H"
+#include "xed/xed-category-enum.h"
 
-//#define NUM_INSTR_DESTINATIONS 4
-//#define NUM_INSTR_SOURCES 4
-
-//typedef struct trace_instr_format {
-  //unsigned long long int ip; // instruction pointer (program counter) value
-
-  //unsigned char is_branch; // is this branch
-  //unsigned char branch_taken; // if so, is this taken
-
-  //unsigned char destination_registers[NUM_INSTR_DESTINATIONS]; // output
-                                                                //registers
-  //unsigned char source_registers[NUM_INSTR_SOURCES]; // input registers
-
-  //unsigned long long int destination_memory[NUM_INSTR_DESTINATIONS]; // output
-                                                                      //memory
-  //unsigned long long int source_memory[NUM_INSTR_SOURCES]; // input memory
-//} trace_instr_format_t;
+// To collect
+// https://software.intel.com/sites/landingpage/pintool/docs/81205/Pin/html/group__INS__BASIC__API__GEN__IA32.html
+// - category
+// - opcode
+// - branching
+//   - is branch
+//   - is call
+//   - taken / not taken
+//   - direct / indirect
+//   - conditional / unconditional
+//   - forward / backwards
 
 /* ================================================================== */
 // Global variables
@@ -112,7 +107,7 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
   curr_instr.ip = (unsigned long long int)ip;
 
   curr_instr.is_branch = 0;
-  //curr_instr.category = category;
+  // curr_instr.category = category;
   curr_instr.branch_taken = 0;
 
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {

@@ -8,6 +8,13 @@ for i in `find $DIR/spec/benchspec -maxdepth 3 -type d | grep run`; do
   benchmark=$(basename $(dirname $i))
   speccmds=$(find $i | grep speccmds)
 
+  if grep -Fxq $benchmark ~/PhaseSim/process.txt
+  then
+    echo Processing $benchmark
+  else
+    continue
+  fi
+
   # Copy executable
   rundir=$(dirname $speccmds)
   cp $rundir/../../exe/* $rundir
