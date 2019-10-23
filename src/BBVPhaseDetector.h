@@ -4,6 +4,9 @@
 // Compute normalized working set distance and identify new phase if distance is
 // sufficiently large
 // Distance = (Union - Intersection) / Union
+//
+// TODO: Normalize basic block vector by dividing each element by the sum of all
+// the elements in the vector
 
 #include <numeric>
 #include <vector>
@@ -44,7 +47,6 @@ class BBVPhaseDetector : public PhaseDetector {
       const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
-
     uint64_t sum1 = std::accumulate(lib1_.begin(), lib1_.end(), 0);
     uint64_t sum2 = std::accumulate(lib2_.begin(), lib2_.end(), 0);
 

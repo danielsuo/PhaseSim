@@ -9,12 +9,18 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "instruction.h"
 #include "pin.H"
 #include "xed/xed-category-enum.h"
 
-// To collect
+#define NUM_INSTR_DESTINATIONS 2
+#define NUM_INSTR_SOURCES 4
+
+// RESOURCES
 // https://software.intel.com/sites/landingpage/pintool/docs/81205/Pin/html/group__INS__BASIC__API__GEN__IA32.html
+// https://software.intel.com/sites/landingpage/pintool/docs/81205/Pin/html/group__RTN__BASIC__API.html
+// https://software.intel.com/sites/landingpage/pintool/docs/97503/Pin/html/group__INST__ARGS.html
+
+// To collect
 // - category
 // - opcode
 // - branching
@@ -24,6 +30,108 @@
 //   - direct / indirect
 //   - conditional / unconditional
 //   - forward / backwards
+// - routines
+
+struct BRANCH {
+  static const uint8_t branch = 0b00000001;
+  static const uint8_t taken = 0b00000010;
+  static const uint8_t call = 0b00000100;
+  static const uint8_t direct = 0b00001000;
+  static const uint8_t cond = 0b00010000;
+  static const uint8_t fwd = 0b00100000;
+  static const uint8_t ret = 0b01000000;
+
+  static void
+  print(uint8_t info) {
+    cout << "Branch: ";
+    if (info & branch) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Taken: ";
+    if (info & taken) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Call: ";
+    if (info & call) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Direct: ";
+    if (info & direct) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Conditional: ";
+    if (info & cond) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Forward: ";
+    if (info & fwd) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+
+    cout << "Return: ";
+    if (info & ret) {
+      cout << "true" << endl;
+    } else {
+      cout << "false" << endl;
+    }
+  }
+};
+
+class input_instr {
+ public:
+  // instruction pointer or PC (Program Counter)
+  uint64_t ip;
+
+  // globally-unique routine id
+  uint64_t routine_id;
+
+  // instruction category
+  // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
+  uint8_t category;
+
+  // branch info
+  uint8_t branch_info;
+
+  uint8_t destination_registers[NUM_INSTR_DESTINATIONS]; // output registers
+  uint8_t source_registers[NUM_INSTR_SOURCES]; // input registers
+
+  uint64_t destination_memory[NUM_INSTR_DESTINATIONS]; // output memory
+  uint64_t source_memory[NUM_INSTR_SOURCES]; // input memory
+
+  input_instr() {
+    ip = 0;
+    routine_id = 0;
+    category = 0;
+    branch_info = 0;
+
+    for (uint32_t i = 0; i < NUM_INSTR_SOURCES; i++) {
+      source_registers[i] = 0;
+      source_memory[i] = 0;
+    }
+
+    for (uint32_t i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
+      destination_registers[i] = 0;
+      destination_memory[i] = 0;
+    }
+  };
+};
 
 /* ================================================================== */
 // Global variables
@@ -90,8 +198,6 @@ Usage() {
 void
 BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
   instrCount++;
-  // printf("[%p %u %s ", ip, opcode, (char*)opstring);
-
   if (instrCount > KnobSkipInstructions.Value()) {
     tracing_on = true;
 
@@ -105,10 +211,10 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
 
   // reset the current instruction
   curr_instr.ip = (unsigned long long int)ip;
+  curr_instr.routine_id = 0;
 
-  curr_instr.is_branch = 0;
-  // curr_instr.category = category;
-  curr_instr.branch_taken = 0;
+  curr_instr.branch_info = 0;
+  curr_instr.category = category;
 
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
     curr_instr.destination_registers[i] = 0;
@@ -123,10 +229,6 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
 
 void
 EndInstruction() {
-  // printf("%d]\n", (int)instrCount);
-
-  // printf("\n");
-
   if (instrCount > KnobSkipInstructions.Value()) {
     tracing_on = true;
 
@@ -148,12 +250,9 @@ EndInstruction() {
 }
 
 void
-BranchOrNot(UINT32 taken) {
-  // printf("[%d] ", taken);
-
-  curr_instr.is_branch = 1;
-  if (taken != 0) {
-    curr_instr.branch_taken = 1;
+BranchHandler(UINT32 is_taken) {
+  if (is_taken != 0) {
+    curr_instr.branch_info |= BRANCH::taken;
   }
 }
 
@@ -163,19 +262,6 @@ RegRead(UINT32 i, UINT32 index) {
     return;
 
   REG r = (REG)i;
-
-  /*
-     if(r == 26)
-     {
-  // 26 is the IP, which is read and written by branches
-  return;
-  }
-  */
-
-  // cout << r << " " << REG_StringShort((REG)r) << " " ;
-  // cout << REG_StringShort((REG)r) << " " ;
-
-  // printf("%d ", (int)r);
 
   // check to see if this register is already in the list
   int already_found = 0;
@@ -201,19 +287,6 @@ RegWrite(REG i, UINT32 index) {
     return;
 
   REG r = (REG)i;
-
-  /*
-     if(r == 26)
-     {
-  // 26 is the IP, which is read and written by branches
-  return;
-  }
-  */
-
-  // cout << "<" << r << " " << REG_StringShort((REG)r) << "> ";
-  // cout << "<" << REG_StringShort((REG)r) << "> ";
-
-  // printf("<%d> ", (int)r);
 
   int already_found = 0;
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
@@ -243,8 +316,6 @@ MemoryRead(VOID* addr, UINT32 index, UINT32 read_size) {
   if (!tracing_on)
     return;
 
-  // printf("0x%llx,%u ", (unsigned long long int)addr, read_size);
-
   // check to see if this memory read location is already in the list
   int already_found = 0;
   for (int i = 0; i < NUM_INSTR_SOURCES; i++) {
@@ -268,8 +339,6 @@ MemoryWrite(VOID* addr, UINT32 index) {
   if (!tracing_on)
     return;
 
-  // printf("(0x%llx) ", (unsigned long long int) addr);
-
   // check to see if this memory write location is already in the list
   int already_found = 0;
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
@@ -286,12 +355,6 @@ MemoryWrite(VOID* addr, UINT32 index) {
       }
     }
   }
-  /*
-     if(index==0)
-     {
-     curr_instr.destination_memory = (long long int)addr;
-     }
-     */
 }
 
 /* ===================================================================== */
@@ -307,7 +370,8 @@ Instruction(INS ins, VOID* v) {
   UINT32 category = INS_Category(ins);
   std::string category_string = CATEGORY_StringShort(category);
 
-  std::cout << opcode_string << " " << category_string << std::endl;
+  // Get globally-unique routine ID
+  curr_instr.routine_id = RTN_Id(INS_Rtn(ins));
 
   INS_InsertCall(
       ins,
@@ -322,8 +386,39 @@ Instruction(INS ins, VOID* v) {
 
   // instrument branch instructions
   if (INS_IsBranch(ins)) {
+    curr_instr.branch_info |= BRANCH::branch;
     INS_InsertCall(
-        ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
+        ins,
+        IPOINT_BEFORE,
+        (AFUNPTR)BranchHandler,
+        IARG_BRANCH_TAKEN,
+        IARG_END);
+  }
+
+  if (INS_IsCall(ins)) {
+    curr_instr.branch_info |= BRANCH::call;
+    // printf("Call: %d\n", curr_instr.branch_info);
+  }
+
+  if (INS_IsDirectBranchOrCall(ins)) {
+    curr_instr.branch_info |= BRANCH::direct;
+    // printf("Direct: %d\n", curr_instr.branch_info);
+  }
+
+  if (category == XED_CATEGORY_COND_BR) {
+    curr_instr.branch_info |= BRANCH::cond;
+    // printf("Conditional: %d\n", curr_instr.branch_info);
+  }
+
+  if (INS_IsBranchOrCall(ins)) {
+    INS next_ins = INS_Next(ins);
+    if (INS_Address(next_ins) > INS_Address(ins)) {
+      curr_instr.branch_info |= BRANCH::fwd;
+    }
+  }
+
+  if (INS_IsRet(ins)) {
+    curr_instr.branch_info |= BRANCH::ret;
   }
 
   // instrument register reads
@@ -395,6 +490,10 @@ Instruction(INS ins, VOID* v) {
   INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)EndInstruction, IARG_END);
 }
 
+// Is called for every routine and instruments reads and writes
+VOID
+Routine(RTN rtn, VOID* v) {}
+
 /*!
  * Print out analysis results.
  * This function is called when the application exits.
@@ -434,16 +533,22 @@ main(int argc, char* argv[]) {
     exit(1);
   }
 
+  PIN_InitSymbols();
+
   // Register function to be called to instrument instructions
   INS_AddInstrumentFunction(Instruction, 0);
+
+  // Register function to be called to instrument routines
+  RTN_AddInstrumentFunction(Routine, 0);
 
   // Register function to be called when the application exits
   PIN_AddFiniFunction(Fini, 0);
 
-  // cerr <<  "===============================================" << endl;
-  // cerr <<  "This application is instrumented by the Champsim Trace Generator"
-  // << endl; cerr <<  "Trace saved in " << KnobOutputFile.Value() << endl; cerr
-  // <<  "===============================================" << endl;
+  cerr << "===============================================" << endl;
+  cerr << "This application is instrumented by the PhaseSim Trace Generator"
+       << endl;
+  cerr << "Trace saved in " << KnobOutputFile.Value() << endl;
+  cerr << "===============================================" << endl;
 
   // Start the program, never returns
   PIN_StartProgram();
