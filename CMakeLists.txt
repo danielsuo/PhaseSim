@@ -23,6 +23,7 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/clipp)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/pin)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/yaml-cpp)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/simpoint)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/gzstream)
 
 # Sources
 file (GLOB MAIN_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
@@ -46,6 +47,7 @@ include_directories (
   ${YAML_CPP_INCLUDE_DIRS}
   ${PIN_INCLUDE_DIRS}
   ${PIN_XED_INCLUDE_DIRS}
+  ${GZSTREAM_INCLUDE_DIRS}
   )
 
 # Link directories
@@ -63,6 +65,7 @@ add_executable (
 target_link_libraries (
   ${PROJECT_NAME}
   yaml-cpp
+  z
   )
 
 add_dependencies (
@@ -91,9 +94,9 @@ if (BuildPintools)
     add_custom_target (
       ${tool}
       ALL
-      COMMAND PIN_ROOT=${PIN_ROOT} PHASESIM_HOME=${CMAKE_CURRENT_SOURCE_DIR} make obj-intel64/${tool}.so
+      COMMAND PIN_ROOT=${PIN_ROOT} PHASESIM_HOME=${CMAKE_CURRENT_SOURCE_DIR} GZIP_INCLUDES=${GZSTREAM_INCLUDE_DIRS} GZIP_LIBS=${GZSTREAM_LIBRARY_DIRS} make obj-intel64/${tool}.so
       WORKING_DIRECTORY  ${TOOL_SOURCE}
-      DEPENDS always_rebuild ${PIN_EXTERNAL_PROJECT}
+      DEPENDS always_rebuild ${PIN_EXTERNAL_PROJECT} ${GZSTREAM_EXTERNAL_PROJECT}
       )
   endforeach (tool)
 endif (BuildPintools)

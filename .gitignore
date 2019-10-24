@@ -2,6 +2,8 @@
 *.so
 *.log
 *.trace
+*.meta
+*.gz
 
 compile_commands.json
 

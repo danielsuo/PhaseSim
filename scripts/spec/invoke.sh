@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+DIM=$1000000
+
 DIR=$(realpath "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && echo $(pwd)/../../)")
-cmds=$DIR/tmp/spec_10m/cmds.sh
+
+mkdir -p $DIR/tmp/spec_$1m
+cmds=$DIR/tmp/spec_$1m/cmds.sh
 rm -f $(dirname $cmds)/*
 
 for i in `find $DIR/spec/benchspec -maxdepth 3 -type d | grep run`; do
@@ -28,7 +32,7 @@ for i in `find $DIR/spec/benchspec -maxdepth 3 -type d | grep run`; do
   touch $bbv
 
   # Export OMP variables every time
-  sed -i "s@^@export OMP_NUM_THREADS=1 \&\& cd $rundir \&\& valgrind --tool=exp-bbv --bb-out-file=$bbv --interval-size=10000000 @" $invoke
+  sed -i "s@^@export OMP_NUM_THREADS=1 \&\& cd $rundir \&\& valgrind --tool=exp-bbv --bb-out-file=$bbv --interval-size=$DIM @" $invoke
 
   # Only take the first output
   echo $(head $invoke -n 1) >> $cmds

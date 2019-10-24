@@ -32,7 +32,7 @@ class BBVPhaseDetector : public PhaseDetector {
       const input_instr& instr,
       const phasesim::CPUCounters& curr_counters,
       const phasesim::CPUCounters& prev_counters) override {
-    if (instr.is_branch) {
+    if (instr.branch_info & BRANCH::branch) {
       auto idx = instr.ip % bbv_dim_;
       if (lib1_is_prev_) {
         lib2_[idx]++;

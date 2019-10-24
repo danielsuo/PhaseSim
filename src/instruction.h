@@ -12,18 +12,82 @@
 #include "set.h"
 #include "xed/xed-category-enum.h"
 
+struct BRANCH {
+  static const uint8_t branch = 0b00000001;
+  static const uint8_t taken = 0b00000010;
+  static const uint8_t call = 0b00000100;
+  static const uint8_t direct = 0b00001000;
+  static const uint8_t cond = 0b00010000;
+  static const uint8_t fwd = 0b00100000;
+  static const uint8_t ret = 0b01000000;
+
+  static void
+  print(uint8_t info) {
+    std::cout << "Branch: ";
+    if (info & branch) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Taken: ";
+    if (info & taken) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Call: ";
+    if (info & call) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Direct: ";
+    if (info & direct) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Conditional: ";
+    if (info & cond) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Forward: ";
+    if (info & fwd) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+
+    std::cout << "Return: ";
+    if (info & ret) {
+      std::cout << "true" << std::endl;
+    } else {
+      std::cout << "false" << std::endl;
+    }
+  }
+};
+
 class input_instr {
  public:
   // instruction pointer or PC (Program Counter)
   uint64_t ip;
 
+  // globally-unique routine id
+  uint64_t routine_id;
+
   // instruction category
   // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
-  //uint8_t category;
+  uint8_t category;
 
   // branch info
-  uint8_t is_branch;
-  uint8_t branch_taken;
+  uint8_t branch_info;
 
   uint8_t destination_registers[NUM_INSTR_DESTINATIONS]; // output registers
   uint8_t source_registers[NUM_INSTR_SOURCES]; // input registers
@@ -33,9 +97,9 @@ class input_instr {
 
   input_instr() {
     ip = 0;
-    //category = 0;
-    is_branch = 0;
-    branch_taken = 0;
+    routine_id = 0;
+    category = 0;
+    branch_info = 0;
 
     for (uint32_t i = 0; i < NUM_INSTR_SOURCES; i++) {
       source_registers[i] = 0;

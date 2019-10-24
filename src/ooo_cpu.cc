@@ -198,9 +198,9 @@ O3_CPU::handle_branch() {
 
         arch_instr.instr_id = instr_unique_id;
         arch_instr.ip = current_instr.ip;
-        // arch_instr.category = current_instr.category;
-        arch_instr.is_branch = current_instr.is_branch;
-        arch_instr.branch_taken = current_instr.branch_taken;
+        arch_instr.category = current_instr.category;
+        arch_instr.is_branch = current_instr.branch_info & BRANCH::branch;
+        arch_instr.branch_taken = current_instr.branch_info & BRANCH::taken;
 
         arch_instr.asid[0] = cpu;
         arch_instr.asid[1] = cpu;

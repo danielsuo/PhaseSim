@@ -72,7 +72,7 @@ main(int argc, char* argv[]) {
 
     curr_counters.instructions = counters["instr::total"];
     curr_counters.cycles = curr_counters.instructions;
-    if (instr.is_branch) {
+    if (instr.branch_info & BRANCH::branch) {
       curr_counters.branches++;
     }
 

@@ -24,9 +24,7 @@ printi(const input_instr& instruction) {
   std::cout << "index: " << std::dec << instruction_index << std::endl;
   std::cout << "counter: " << std::dec << instruction_index + 1 << std::endl;
   std::cout << "ip: " << std::hex << instruction.ip % (1 << 24) << std::endl;
-  std::cout << "is_branch: " << (uint32_t)instruction.is_branch << std::endl;
-  std::cout << "branch_taken: " << (uint32_t)instruction.branch_taken
-            << std::endl;
+  std::cout << "branch_info: " << (uint32_t)instruction.branch_info << std::endl;
 
   std::cout << "dst_reg: ";
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {

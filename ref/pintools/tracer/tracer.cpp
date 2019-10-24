@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include "instruction.h"
 #include "pin.H"
 #include "xed/xed-category-enum.h"
 
@@ -32,116 +33,15 @@
 //   - forward / backwards
 // - routines
 
-struct BRANCH {
-  static const uint8_t branch = 0b00000001;
-  static const uint8_t taken = 0b00000010;
-  static const uint8_t call = 0b00000100;
-  static const uint8_t direct = 0b00001000;
-  static const uint8_t cond = 0b00010000;
-  static const uint8_t fwd = 0b00100000;
-  static const uint8_t ret = 0b01000000;
-
-  static void
-  print(uint8_t info) {
-    cout << "Branch: ";
-    if (info & branch) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Taken: ";
-    if (info & taken) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Call: ";
-    if (info & call) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Direct: ";
-    if (info & direct) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Conditional: ";
-    if (info & cond) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Forward: ";
-    if (info & fwd) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-
-    cout << "Return: ";
-    if (info & ret) {
-      cout << "true" << endl;
-    } else {
-      cout << "false" << endl;
-    }
-  }
-};
-
-class input_instr {
- public:
-  // instruction pointer or PC (Program Counter)
-  uint64_t ip;
-
-  // globally-unique routine id
-  uint64_t routine_id;
-
-  // instruction category
-  // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
-  uint8_t category;
-
-  // branch info
-  uint8_t branch_info;
-
-  uint8_t destination_registers[NUM_INSTR_DESTINATIONS]; // output registers
-  uint8_t source_registers[NUM_INSTR_SOURCES]; // input registers
-
-  uint64_t destination_memory[NUM_INSTR_DESTINATIONS]; // output memory
-  uint64_t source_memory[NUM_INSTR_SOURCES]; // input memory
-
-  input_instr() {
-    ip = 0;
-    routine_id = 0;
-    category = 0;
-    branch_info = 0;
-
-    for (uint32_t i = 0; i < NUM_INSTR_SOURCES; i++) {
-      source_registers[i] = 0;
-      source_memory[i] = 0;
-    }
-
-    for (uint32_t i = 0; i < NUM_INSTR_DESTINATIONS; i++) {
-      destination_registers[i] = 0;
-      destination_memory[i] = 0;
-    }
-  };
-};
-
 /* ================================================================== */
 // Global variables
 /* ================================================================== */
 
 UINT64 instrCount = 0;
 
-FILE* out;
+std::ofstream trace_file;
+std::ofstream meta_file;
 
-bool output_file_closed = false;
 bool tracing_on = false;
 
 input_instr curr_instr;
@@ -149,12 +49,19 @@ input_instr curr_instr;
 /* ===================================================================== */
 // Command line switches
 /* ===================================================================== */
-KNOB<string> KnobOutputFile(
+KNOB<string> KnobTracePath(
     KNOB_MODE_WRITEONCE,
     "pintool",
     "o",
-    "champsim.trace",
-    "specify file name for Champsim tracer output");
+    "phasesim.trace",
+    "specify file name for PhaseSim tracer output");
+
+KNOB<string> KnobMetaPath(
+    KNOB_MODE_WRITEONCE,
+    "pintool",
+    "m",
+    "phasesim.meta",
+    "specify file name for PhaseSim tracer output");
 
 KNOB<UINT64> KnobSkipInstructions(
     KNOB_MODE_WRITEONCE,
@@ -179,16 +86,24 @@ KNOB<UINT64> KnobTraceInstructions(
  */
 INT32
 Usage() {
-  cerr << "This tool creates a register and memory access trace" << endl
-       << "Specify the output trace file with -o" << endl
-       << "Specify the number of instructions to skip before tracing with -s"
-       << endl
-       << "Specify the number of instructions to trace with -t" << endl
-       << endl;
+  std::cerr
+      << "This tool creates a register and memory access trace" << std::endl
+      << "Specify the output trace file with -o" << std::endl
+      << "Specify the number of instructions to skip before tracing with -s"
+      << std::endl
+      << "Specify the number of instructions to trace with -t" << std::endl
+      << std::endl;
 
-  cerr << KNOB_BASE::StringKnobSummary() << endl;
+  std::cerr << KNOB_BASE::StringKnobSummary() << std::endl;
 
   return -1;
+}
+
+void
+finalize() {
+  std::cout << "Traced " << instrCount << " instructions" << std::endl;
+  trace_file.close();
+  meta_file.close();
 }
 
 /* ===================================================================== */
@@ -202,8 +117,9 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
     tracing_on = true;
 
     if (instrCount >
-        (KnobTraceInstructions.Value() + KnobSkipInstructions.Value()))
+        (KnobTraceInstructions.Value() + KnobSkipInstructions.Value())) {
       tracing_on = false;
+    }
   }
 
   if (!tracing_on)
@@ -235,15 +151,9 @@ EndInstruction() {
     if (instrCount <=
         (KnobTraceInstructions.Value() + KnobSkipInstructions.Value())) {
       // keep tracing
-      fwrite(&curr_instr, sizeof(input_instr), 1, out);
+      trace_file.write((char*)&curr_instr, sizeof(input_instr));
     } else {
-      tracing_on = false;
-      // close down the file, we're done tracing
-      if (!output_file_closed) {
-        fclose(out);
-        output_file_closed = true;
-      }
-
+      finalize();
       exit(0);
     }
   }
@@ -492,7 +402,19 @@ Instruction(INS ins, VOID* v) {
 
 // Is called for every routine and instruments reads and writes
 VOID
-Routine(RTN rtn, VOID* v) {}
+Routine(RTN rtn, VOID* v) {
+  std::cout << "Function: " << RTN_Name(rtn) << std::endl;
+}
+
+// Is called for every image and instruments reads and writes
+VOID
+Image(IMG img, VOID* v) {
+  if (IMG_IsMainExecutable(img)) {
+    meta_file << "Main: " << IMG_Name(img) << std::endl;
+  } else {
+    meta_file << "Image: " << IMG_Name(img) << std::endl;
+  }
+}
 
 /*!
  * Print out analysis results.
@@ -503,11 +425,7 @@ Routine(RTN rtn, VOID* v) {}
  */
 VOID
 Fini(INT32 code, VOID* v) {
-  // close the file if it hasn't already been closed
-  if (!output_file_closed) {
-    fclose(out);
-    output_file_closed = true;
-  }
+  finalize();
 }
 
 /*!
@@ -522,18 +440,22 @@ int
 main(int argc, char* argv[]) {
   // Initialize PIN library. Print help message if -h(elp) is specified
   // in the command line or the command line is invalid
-  if (PIN_Init(argc, argv))
+  if (PIN_Init(argc, argv)) {
     return Usage();
+  }
 
-  const char* fileName = KnobOutputFile.Value().c_str();
+  trace_file.open(KnobTracePath.Value().c_str(), std::ios::binary);
+  meta_file.open(KnobMetaPath.Value().c_str());
 
-  out = fopen(fileName, "ab");
-  if (!out) {
-    cout << "Couldn't open output trace file. Exiting." << endl;
+  if (!trace_file.is_open()) {
+    std::cout << "Couldn't open output trace file. Exiting." << std::endl;
     exit(1);
   }
 
   PIN_InitSymbols();
+
+  // Register function to be called whenever there is a new image
+  IMG_AddInstrumentFunction(Image, 0);
 
   // Register function to be called to instrument instructions
   INS_AddInstrumentFunction(Instruction, 0);
@@ -544,11 +466,12 @@ main(int argc, char* argv[]) {
   // Register function to be called when the application exits
   PIN_AddFiniFunction(Fini, 0);
 
-  cerr << "===============================================" << endl;
-  cerr << "This application is instrumented by the PhaseSim Trace Generator"
-       << endl;
-  cerr << "Trace saved in " << KnobOutputFile.Value() << endl;
-  cerr << "===============================================" << endl;
+  std::cerr << "===============================================" << std::endl;
+  std::cerr
+      << "This application is instrumented by the PhaseSim Trace Generator"
+      << std::endl;
+  std::cerr << "Trace saved in " << KnobTracePath.Value() << std::endl;
+  std::cerr << "===============================================" << std::endl;
 
   // Start the program, never returns
   PIN_StartProgram();

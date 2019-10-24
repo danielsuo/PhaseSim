@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TYPE unsigned short int
+#define SETTYPE unsigned short int
 //#define MAX_SIZE	ROB_SIZE
 // sethpugsley - changed this from ROB_SIZE to allow for non-power-of-2 ROB
 // sizes, like real CPUs have but MAX_SIZE here still requires a power-of-2
@@ -26,7 +26,7 @@
 class fastset {
   union {
     // values for a small set
-    TYPE values[SMALL_SIZE];
+    SETTYPE values[SMALL_SIZE];
 
     // the bits representing the set
     unsigned long long int bits[MAX_SIZE / 64];
@@ -37,7 +37,7 @@ class fastset {
   // set a bit in the bits
 
   void
-  setbit(TYPE x) {
+  setbit(SETTYPE x) {
     int word = x >> 6;
     int bit = x & 63;
     data.bits[word] |= 1ull << bit;
@@ -46,7 +46,7 @@ class fastset {
   // get one of the bits
 
   bool
-  getbit(TYPE x) {
+  getbit(SETTYPE x) {
     int word = x >> 6;
     int bit = x & 63;
     return (data.bits[word] >> bit) & 1;
@@ -55,10 +55,10 @@ class fastset {
   // insert an item into a small set
 
   void
-  insert_small(TYPE x) {
+  insert_small(SETTYPE x) {
     int i;
     for (i = 0; i < card; i++) {
-      TYPE y = data.values[i];
+      SETTYPE y = data.values[i];
       if (y == x)
         return;
       if (y > x)
@@ -69,7 +69,7 @@ class fastset {
     for (int j = card - 1; j >= i; j--)
       data.values[j + 1] = data.values[j];
     // the loop seems a little faster than memmove
-    // memmove (&data.values[i+1], &data.values[i], (sizeof (TYPE) * (card-i)));
+    // memmove (&data.values[i+1], &data.values[i], (sizeof (SETTYPE) * (card-i)));
     data.values[i] = x;
     card++;
   }
@@ -77,9 +77,9 @@ class fastset {
   // do a linear search in a small set
 
   bool
-  search_small_linear(TYPE x) {
+  search_small_linear(SETTYPE x) {
     for (int i = 0; i < card; i++) {
-      TYPE y = data.values[i];
+      SETTYPE y = data.values[i];
       if (y > x)
         return false;
       if (y == x)
@@ -91,7 +91,7 @@ class fastset {
   // search a small set, specializing for the set size
 
   bool
-  search_small(TYPE x) {
+  search_small(SETTYPE x) {
     // no elements? we're done.
 
     if (!card)
@@ -108,7 +108,7 @@ class fastset {
     int end = card - 1;
     int middle = end / 2;
     for (;;) {
-      TYPE y = data.values[middle];
+      SETTYPE y = data.values[middle];
       if (x < y) {
         end = middle - 1;
       } else if (x > y) {
@@ -130,8 +130,8 @@ class fastset {
     // we have to use a temporary array to hold the small set contents
     // because the small set and bitset occupy the same memory
 
-    TYPE tmp[SMALL_SIZE];
-    memcpy(tmp, data.values, sizeof(TYPE) * card);
+    SETTYPE tmp[SMALL_SIZE];
+    memcpy(tmp, data.values, sizeof(SETTYPE) * card);
     memset(data.bits, 0, sizeof(data.bits));
     for (int i = 0; i < card; i++)
       setbit(tmp[i]);
@@ -151,7 +151,7 @@ class fastset {
   // insert a value into the set
 
   void
-  insert(TYPE x) {
+  insert(SETTYPE x) {
     // assert (x < MAX_SIZE);
 
     // if the set is empty...
@@ -180,7 +180,7 @@ class fastset {
   // search the set for a value
 
   bool
-  search(TYPE x) {
+  search(SETTYPE x) {
     // assert (x < MAX_SIZE);
 
     // empty?
@@ -238,7 +238,7 @@ class fastset {
   // expand the entire set into the array v, returning the cardinality
 
   int
-  expand(TYPE v[], int n) {
+  expand(SETTYPE v[], int n) {
     if (!card)
       return 0;
 
@@ -253,13 +253,13 @@ class fastset {
     // go through the bit array looking for elements
 
     int k = 0;
-    TYPE i;
+    SETTYPE i;
     for (i = 0; i < n; i += 64) {
       // if this 64 bit subset is not empty, copy it into v
 
       if (data.bits[i / 64]) {
-        for (TYPE j = 0; j < 64; j++) {
-          TYPE l = i + j;
+        for (SETTYPE j = 0; j < 64; j++) {
+          SETTYPE l = i + j;
           if (l < n) {
             if (getbit(l))
               v[k++] = l;
@@ -276,7 +276,7 @@ class fastset {
 // member
 
 #define ITERATE_SET(i, a, n)                                       \
-  TYPE expand_##i[n + 1];                                          \
+  SETTYPE expand_##i[n + 1];                                          \
   int card_##i = (a).expand(expand_##i, n);                        \
   for (int count_##i = 0, i = expand_##i[0]; count_##i < card_##i; \
        i = expand_##i[++count_##i])
