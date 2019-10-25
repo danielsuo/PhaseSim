@@ -4,10 +4,12 @@
  *  and could serve as the starting point for developing your first PIN tool
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include "instruction.h"
 #include "pin.H"
@@ -39,9 +41,13 @@
 
 UINT64 instrCount = 0;
 
-std::ofstream trace_file;
+std::string program_name;
+std::string output_dir;
+std::ofstream progress_file;
+FILE* trace_file;
 std::ofstream meta_file;
 
+bool trace_file_closed = false;
 bool tracing_on = false;
 
 input_instr curr_instr;
@@ -52,16 +58,26 @@ input_instr curr_instr;
 KNOB<string> KnobTracePath(
     KNOB_MODE_WRITEONCE,
     "pintool",
-    "o",
-    "phasesim.trace",
+    "f",
+    "phasesim.trace.gz",
     "specify file name for PhaseSim tracer output");
+
+KNOB<string> KnobOutputDirectory(
+    KNOB_MODE_WRITEONCE, "pintool", "d", "tmp", "specify output directory");
+
+KNOB<string> KnobProgressPath(
+    KNOB_MODE_WRITEONCE,
+    "pintool",
+    "p",
+    "phasesim.progress",
+    "specify file name to output progress");
 
 KNOB<string> KnobMetaPath(
     KNOB_MODE_WRITEONCE,
     "pintool",
     "m",
     "phasesim.meta",
-    "specify file name for PhaseSim tracer output");
+    "specify file name to output meta data");
 
 KNOB<UINT64> KnobSkipInstructions(
     KNOB_MODE_WRITEONCE,
@@ -73,7 +89,7 @@ KNOB<UINT64> KnobSkipInstructions(
 KNOB<UINT64> KnobTraceInstructions(
     KNOB_MODE_WRITEONCE,
     "pintool",
-    "t",
+    "i",
     "1000000",
     "How many instructions to trace");
 
@@ -102,7 +118,10 @@ Usage() {
 void
 finalize() {
   std::cout << "Traced " << instrCount << " instructions" << std::endl;
-  trace_file.close();
+  if (!trace_file_closed) {
+    fclose(trace_file);
+    trace_file_closed = true;
+  }
   meta_file.close();
 }
 
@@ -112,6 +131,12 @@ finalize() {
 
 void
 BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
+  if (instrCount % 1000000 == 0) {
+    std::cout << program_name << ": " << instrCount << " instructions"
+              << std::endl;
+    progress_file << program_name << ": " << instrCount << " instructions"
+                  << std::endl;
+  }
   instrCount++;
   if (instrCount > KnobSkipInstructions.Value()) {
     tracing_on = true;
@@ -151,7 +176,7 @@ EndInstruction() {
     if (instrCount <=
         (KnobTraceInstructions.Value() + KnobSkipInstructions.Value())) {
       // keep tracing
-      trace_file.write((char*)&curr_instr, sizeof(input_instr));
+      fwrite(&curr_instr, sizeof(input_instr), 1, trace_file);
     } else {
       finalize();
       exit(0);
@@ -444,10 +469,27 @@ main(int argc, char* argv[]) {
     return Usage();
   }
 
-  trace_file.open(KnobTracePath.Value().c_str(), std::ios::binary);
-  meta_file.open(KnobMetaPath.Value().c_str());
+  std::stringstream ss;
+  // ss << "mkdir -p " << KnobOutputDirectory.Value().c_str();
+  // std::system(ss.str().c_str());
 
-  if (!trace_file.is_open()) {
+  program_name = std::string(argv[0]);
+
+  ss.str(std::string());
+  ss << KnobOutputDirectory.Value().c_str() << "/"
+     << KnobProgressPath.Value().c_str();
+  progress_file.open(ss.str().c_str());
+  ss.str(std::string());
+  ss << "gzip -c > " << KnobOutputDirectory.Value().c_str() << "/"
+     << KnobTracePath.Value().c_str();
+
+  trace_file = popen(ss.str().c_str(), "w");
+  ss.str(std::string());
+  ss << KnobOutputDirectory.Value().c_str() << "/"
+     << KnobMetaPath.Value().c_str();
+  meta_file.open(ss.str().c_str());
+
+  if (!trace_file) {
     std::cout << "Couldn't open output trace file. Exiting." << std::endl;
     exit(1);
   }

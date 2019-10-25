@@ -44,7 +44,7 @@ def pin(
     if not os.path.exists(executable):
         raise Exception("Binary {} not found".format(executable))
 
-    cmd = [pin_binary, "-t", tool_binary]
+    cmd = [pin_binary, "-t", tool_binary, "-d", output_dir]
     cmd.extend(tool_args.split())
     cmd.extend(["--", executable])
     cmd.extend(args)
