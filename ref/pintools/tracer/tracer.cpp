@@ -130,10 +130,8 @@ finalize() {
 /* ===================================================================== */
 
 void
-BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
+BeginInstruction(VOID* ip, UINT32 opcode, UINT32 category) {
   if (instrCount % 1000000 == 0) {
-    std::cout << program_name << ": " << instrCount << " instructions"
-              << std::endl;
     progress_file << program_name << ": " << instrCount << " instructions"
                   << std::endl;
   }
@@ -155,6 +153,7 @@ BeginInstruction(VOID* ip, UINT32 op_code, UINT32 category) {
   curr_instr.routine_id = 0;
 
   curr_instr.branch_info = 0;
+  curr_instr.opcode = opcode;
   curr_instr.category = category;
 
   for (int i = 0; i < NUM_INSTR_DESTINATIONS; i++) {

@@ -80,10 +80,14 @@ class input_instr {
   uint64_t ip;
 
   // globally-unique routine id
-  uint64_t routine_id;
+  uint32_t routine_id;
 
-  // instruction category
-  // See https://intelxed.github.io/ref-manual/xed-category-enum_8h.html
+  // Opcode: xed-iclass-enum.h
+  // NOTE: ~1560 opcodes; there is room for more data here
+  uint16_t opcode;
+
+  // Category: xed-category-enum.h
+  // NOTE: ~70 categories; there is room for more data here
   uint8_t category;
 
   // branch info
@@ -98,6 +102,7 @@ class input_instr {
   input_instr() {
     ip = 0;
     routine_id = 0;
+    opcode = 0;
     category = 0;
     branch_info = 0;
 
