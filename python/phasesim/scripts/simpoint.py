@@ -12,7 +12,7 @@ SIMPOINT_HOME = os.path.join(
     "deps/simpoint/simpoint-git-prefix/src/simpoint-git/")
 
 
-def simpoint(bbv_file, k, max_k, simpoint_file, weight_file, verbose, args):
+def simpoint(bbv_file, k, max_k, output_dir, verbose, args):
 
     print(locals())
 
@@ -20,8 +20,11 @@ def simpoint(bbv_file, k, max_k, simpoint_file, weight_file, verbose, args):
 
     args = [arg.replace("--", "-") for arg in args]
     cmd = [
-        simpoint_binary, "-loadFVFile", bbv_file, "-saveSimpoints",
-        simpoint_file, "-saveSimpointWeights", weight_file
+        simpoint_binary, "-loadFVFile", bbv_file,
+        "-saveSimpoints", os.path.join(output_dir, "out.simpoints"),
+        "-saveSimpointWeights", os.path.join(output_dir, "out.weights"),
+        "-saveFinalCtrs", os.path.join(output_dir, "out.centres"),
+        "-saveLabels", os.path.join(output_dir, "out.labels")
     ]
     if k is not None:
         cmd.extend(["-k", k])
@@ -63,17 +66,11 @@ def simpoint(bbv_file, k, max_k, simpoint_file, weight_file, verbose, args):
     type=int,
     help="Compute up to max k using binary search")
 @click.option(
-    "-s",
-    "--simpoint-file",
-    default="out.simpoints",
+    "-o",
+    "--output-dir",
+    default="out",
     type=click.Path(),
-    help="Output simpoint file")
-@click.option(
-    "-w",
-    "--weight-file",
-    default="out.weights",
-    type=click.Path(),
-    help="Output weight file")
+    help="Output directory")
 @click.option('-v', '--verbose', is_flag=True, help='Enables verbose mode')
 @click.argument("args", nargs=-1, type=click.UNPROCESSED)
 @clickutil.call(simpoint)

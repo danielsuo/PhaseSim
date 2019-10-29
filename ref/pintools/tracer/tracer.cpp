@@ -480,7 +480,7 @@ main(int argc, char* argv[]) {
      << KnobProgressPath.Value().c_str();
   progress_file.open(ss.str().c_str());
   ss.str(std::string());
-  ss << "gzip -c > " << KnobOutputDirectory.Value().c_str() << "/"
+  ss << "gzip -9c > " << KnobOutputDirectory.Value().c_str() << "/"
      << KnobTracePath.Value().c_str();
 
   trace_file = popen(ss.str().c_str(), "w");
